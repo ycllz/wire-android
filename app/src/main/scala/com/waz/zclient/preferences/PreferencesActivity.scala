@@ -92,18 +92,18 @@ class PreferencesActivity extends BaseActivity
     if (LayoutSpec.isPhone(this)) ViewUtils.lockScreenOrientation(Configuration.ORIENTATION_PORTRAIT, this)
     if (savedInstanceState == null) getSupportFragmentManager.beginTransaction.add(R.id.content, RootPreferences.newInstance(null, getIntent.getExtras), RootPreferences.TAG).commit
 
-    currentAccountPref.signal.onChanged {
-      case "" =>
-        verbose("onLogout")
-        getStoreFactory.reset()
-        getControllerFactory.getPickUserController.hideUserProfile()
-        getControllerFactory.getUserPreferencesController.reset()
-        getStoreFactory.getConversationStore.onLogout()
-        getControllerFactory.getNavigationController.resetPagerPositionToDefault()
-
-        startActivity(returning(new Intent(this, classOf[MainActivity]))(_.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK)))
-      case _ => //logged in
-    }
+//    currentAccountPref.signal.onChanged {
+//      case "" =>
+//        verbose("onLogout")
+//        getStoreFactory.reset()
+//        getControllerFactory.getPickUserController.hideUserProfile()
+//        getControllerFactory.getUserPreferencesController.reset()
+//        getStoreFactory.getConversationStore.onLogout()
+//        getControllerFactory.getNavigationController.resetPagerPositionToDefault()
+//
+//        startActivity(returning(new Intent(this, classOf[MainActivity]))(_.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK)))
+//      case _ => //logged in
+//    }
 
     accentColor.on(Threading.Ui) { color =>
       getControllerFactory.getUserPreferencesController.setLastAccentColor(color.getColor())
