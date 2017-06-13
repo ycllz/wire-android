@@ -43,7 +43,7 @@ import com.waz.api.UsersList;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
-import com.waz.zclient.controllers.TeamsAndUserController;
+import com.waz.zclient.controllers.UserAccountsController;
 import com.waz.zclient.controllers.confirmation.ConfirmationCallback;
 import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
@@ -773,7 +773,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
             }
             return;
         }
-        Boolean isTeamSpace = ((BaseActivity) getActivity()).injectJava(TeamsAndUserController.class).isTeamSpace();
+        Boolean isTeamSpace = ((BaseActivity) getActivity()).injectJava(UserAccountsController.class).isTeamSpace();
         if (isTeamSpace) {
             showAcceptedUser(user);
         } else {
