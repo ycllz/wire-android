@@ -74,7 +74,9 @@ class ImageFragment extends BaseFragment[ImageFragment.Container] with FragmentH
     }
     case None => Signal.const(false)
   }
-  lazy val message = collectionController.focusedItem collect { case Some(msg) => msg }
+  lazy val message = collectionController.focusedItem
+    .collect { case Some(msg) => msg }
+    .disableAutowiring()
 
   lazy val imageAsset = collectionController.focusedItem.flatMap {
     case Some(messageData) => Signal[ImageAsset](ZMessaging.currentUi.images.getImageAsset(messageData.assetId))
