@@ -31,7 +31,6 @@ import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.returning
-import com.waz.zclient.controllers.global.SelectionController
 import com.waz.zclient.conversation.CollectionAdapter._
 import com.waz.zclient.conversation.CollectionController.{ContentType, _}
 import com.waz.zclient.messages.RecyclerCursor
@@ -50,16 +49,10 @@ class CollectionAdapter(viewDim: Signal[Dim2])(implicit context: Context, inject
   private implicit val tag: LogTag = logTagFor[CollectionAdapter]
 
   private val zms = inject[Signal[ZMessaging]]
-  private val selectedConversation = inject[SelectionController].selectedConv
+  private val conv = inject[ConversationController].currentConv
   private val collectionController = inject[CollectionController]
 
   val contentMode = Signal[ContentType](AllContent)
-
-  val conv = for {
-    zs <- zms
-    convId <- selectedConversation
-    conv <- Signal future zs.convsStorage.get(convId)
-  } yield conv
 
   var header: CollectionHeaderLinearLayout = null
 

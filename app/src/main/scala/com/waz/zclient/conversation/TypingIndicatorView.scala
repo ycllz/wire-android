@@ -25,8 +25,8 @@ import android.widget.{FrameLayout, TextView}
 import com.waz.model.UserId
 import com.waz.service.ZMessaging
 import com.waz.utils.events.Signal
-import com.waz.zclient.ViewHelper
-import com.waz.zclient.R
+
+import com.waz.zclient.{R, ViewHelper}
 
 class TypingIndicatorView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int)
   extends FrameLayout(context, attrs, defStyleAttr) with ViewHelper {
@@ -66,7 +66,9 @@ class TypingIndicatorView(val context: Context, val attrs: AttributeSet, val def
   }
 
   private def startAnimation() =
-    if(!animationRunning) {
+    animationRunning match {
+      case true => Unit
+      case false =>
         animationRunning = true
         runAnimation()
     }

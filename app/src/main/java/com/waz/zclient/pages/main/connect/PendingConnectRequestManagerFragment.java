@@ -24,6 +24,8 @@ import android.view.ViewGroup;
 import com.waz.api.IConversation;
 import com.waz.api.NetworkMode;
 import com.waz.api.User;
+import com.waz.model.ConvId;
+import com.waz.model.ConversationData;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.ThemeController;
@@ -32,6 +34,10 @@ import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.confirmation.TwoButtonConfirmationCallback;
 import com.waz.zclient.controllers.navigation.Page;
+import com.waz.zclient.conversation.ConversationController;
+import com.waz.zclient.core.stores.network.NetworkAction;
+import com.waz.zclient.media.SoundController;
+import com.waz.zclient.pages.main.participants.OptionsMenuControl;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
 import com.waz.zclient.core.stores.network.NetworkAction;
@@ -41,6 +47,7 @@ import com.waz.zclient.pages.main.participants.OptionsMenuControl;
 import com.waz.zclient.pages.main.participants.OptionsMenuFragment;
 import com.waz.zclient.ui.optionsmenu.OptionsMenu;
 import com.waz.zclient.ui.optionsmenu.OptionsMenuItem;
+import com.waz.zclient.utils.Callback;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
 
@@ -188,7 +195,7 @@ public class PendingConnectRequestManagerFragment extends BaseFragment<PendingCo
     }
 
     @Override
-    public void onOptionsItemClicked(IConversation conversation, User user, OptionsMenuItem item) {
+    public void onOptionsItemClicked(final ConvId convId, User user, OptionsMenuItem item) {
         switch (item) {
             case BLOCK:
                 showBlockUserConfirmation(user);
@@ -197,16 +204,16 @@ public class PendingConnectRequestManagerFragment extends BaseFragment<PendingCo
                 user.unblock();
                 break;
             case ARCHIVE:
-                getStoreFactory().conversationStore().archive(conversation, true);
+                inject(ConversationController.class).archive(convId, true);
                 break;
             case UNARCHIVE:
-                getStoreFactory().conversationStore().archive(conversation, false);
+                inject(ConversationController.class).archive(convId, false);
                 break;
             case SILENCE:
-                conversation.setMuted(true);
+                inject(ConversationController.class).setMuted(convId, true);
                 break;
             case UNSILENCE:
-                conversation.setMuted(false);
+                inject(ConversationController.class).setMuted(convId, false);
                 break;
         }
 
@@ -226,7 +233,7 @@ public class PendingConnectRequestManagerFragment extends BaseFragment<PendingCo
                 getStoreFactory().connectStore().blockUser(user);
                 switch (userRequester) {
                     case CONVERSATION:
-                        getStoreFactory().conversationStore().setCurrentConversationToNext(ConversationChangeRequester.BLOCK_USER);
+                        inject(ConversationController.class).setCurrentConversationToNext(ConversationChangeRequester.BLOCK_USER);
                         break;
                     case SEARCH:
                     case POPOVER:

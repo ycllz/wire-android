@@ -18,10 +18,10 @@
 package com.waz.zclient.core.stores.draft;
 
 import com.waz.api.IConversation;
+import com.waz.model.ConvId;
 import com.waz.zclient.core.stores.IStore;
 
 public interface IDraftStore extends IStore {
-
-    void setDraft(IConversation conversation, String text);
-    String getDraft(IConversation conversation);
+    void setDraft(ConvId conversation, String text);
+    String getDraft(ConvId conversation);
 }

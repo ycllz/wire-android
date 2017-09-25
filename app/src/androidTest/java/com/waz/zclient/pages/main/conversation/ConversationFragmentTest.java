@@ -37,19 +37,18 @@ import com.waz.zclient.testutils.CustomViewAssertions;
 import com.waz.zclient.testutils.FragmentTest;
 import com.waz.zclient.testutils.MockHelper;
 
+import com.waz.zclient.views.ConversationFragment;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.action.ViewActions.swipeLeft;
 import static android.support.test.espresso.intent.Intents.intending;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasType;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
-import static com.waz.zclient.testutils.CustomViewAssertions.isGone;
 import static com.waz.zclient.testutils.CustomViewAssertions.isVisible;
 import static org.hamcrest.Matchers.allOf;
 import static org.mockito.Matchers.any;
@@ -73,7 +72,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
 
         MockHelper.setupConversationMocks(mockConversation, activity);
 
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.t_conversation_toolbar)).check(isVisible());
     }
@@ -86,7 +85,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
 
         MockHelper.setupConversationMocks(mockConversation, activity);
 
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.t_conversation_toolbar)).check(isVisible());
     }
@@ -102,7 +101,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         IConversationScreenController mockScreenController = activity.getControllerFactory().getConversationScreenController();
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withText(conversationName)).perform(click());
         verify(mockScreenController).showParticipants(any(View.class), anyBoolean());
@@ -115,7 +114,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isMemberOfConversation()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.action_video_call)).check(CustomViewAssertions.isNull());
     }
@@ -127,7 +126,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
 //        when(mockConversation.isMemberOfConversation()).thenReturn(false);
 //
 //        MockHelper.setupConversationMocks(mockConversation, activity);
-//        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+//        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 //
 //        onView(withId(R.id.action_video_call)).check(CustomViewAssertions.isNull());
 //    }
@@ -139,7 +138,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isMemberOfConversation()).thenReturn(false);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.action_audio_call)).check(CustomViewAssertions.isNull());
     }
@@ -152,7 +151,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         Thread.sleep(500);
         onView(withId(R.id.cursor_menu_item_more)).perform(click());
@@ -168,7 +167,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         Thread.sleep(500);
         onView(withId(R.id.cursor_menu_item_more)).perform(click());
@@ -184,7 +183,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.cursor_menu_item_audio_message)).check(isVisible());
     }*/
@@ -197,7 +196,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.cursor_menu_item_audio_message)).check(isVisible());
     }
@@ -210,7 +209,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.cursor_menu_item_camera)).check(isVisible());
         onView(withId(R.id.cursor_menu_item_camera)).perform(click());
@@ -228,7 +227,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
 //        when(mockConversation.isActive()).thenReturn(true);
 //
 //        MockHelper.setupConversationMocks(mockConversation, activity);
-//        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+//        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 //
 //        onView(withId(R.id.cursor_menu_item_camera)).check(isVisible());
 //        onView(withId(R.id.cursor_menu_item_camera)).perform(click());
@@ -267,7 +266,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         intending(expectedIntent).respondWith(result);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         onView(withId(R.id.cursor_menu_item_camera)).check(isVisible());
         onView(withId(R.id.cursor_menu_item_camera)).perform(click());
@@ -287,7 +286,7 @@ public class ConversationFragmentTest extends FragmentTest<MainTestActivity> {
         when(mockConversation.isActive()).thenReturn(true);
 
         MockHelper.setupConversationMocks(mockConversation, activity);
-        attachFragment(ConversationFragment.newInstance(), ConversationFragment.TAG);
+        attachFragment(ConversationFragment.apply(), ConversationFragment.TAG());
 
         Thread.sleep(500);
         onView(withId(R.id.cursor_menu_item_gif)).check(isVisible());

@@ -33,6 +33,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import com.waz.api.ImageAsset;
 import com.waz.api.ImageAssetFactory;
+import com.waz.model.ConversationData;
 import com.waz.utils.wrappers.URI;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
@@ -41,15 +42,16 @@ import com.waz.zclient.camera.FlashMode;
 import com.waz.zclient.camera.views.CameraPreviewTextureView;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.camera.CameraActionObserver;
-import com.waz.zclient.controllers.drawing.DrawingController;
 import com.waz.zclient.controllers.drawing.IDrawingController;
 import com.waz.zclient.controllers.orientation.OrientationControllerObserver;
+import com.waz.zclient.conversation.ConversationController;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.extendedcursor.image.ImagePreviewLayout;
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager;
 import com.waz.zclient.pages.main.profile.camera.controls.CameraBottomControl;
 import com.waz.zclient.pages.main.profile.camera.controls.CameraTopControl;
 import com.waz.zclient.ui.animation.interpolators.penner.Expo;
+import com.waz.zclient.utils.Callback;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.SquareOrientation;
 import com.waz.zclient.utils.ViewUtils;
@@ -379,7 +381,7 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
     @Override
     public void onSketchOnPreviewPicture(ImageAsset imageAsset,
                                          ImagePreviewLayout.Source source,
-                                         DrawingController.DrawingMethod method) {
+                                         IDrawingController.DrawingMethod method) {
         getControllerFactory().getDrawingController().showDrawing(imageAsset,
                                                                   IDrawingController.DrawingDestination.CAMERA_PREVIEW_VIEW);
     }
@@ -395,19 +397,27 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
 
         previewProgressBar.setVisibility(View.GONE);
 
-        ImagePreviewLayout imagePreviewLayout = (ImagePreviewLayout) LayoutInflater.from(getContext()).inflate(
+        final ImagePreviewLayout imagePreviewLayout = (ImagePreviewLayout) LayoutInflater.from(getContext()).inflate(
             R.layout.fragment_cursor_images_preview,
             imagePreviewContainer,
             false);
         imagePreviewLayout.showSketch(cameraContext == CameraContext.MESSAGE);
-        String previewTitle = cameraContext == CameraContext.MESSAGE ?
-                                  getStoreFactory().conversationStore().getCurrentConversation().getName() :
-                                  "";
+
         imagePreviewLayout.setImageAsset(imageAsset,
                                          ImagePreviewLayout.Source.CAMERA,
                                          this);
         imagePreviewLayout.setAccentColor(getControllerFactory().getAccentColorController().getAccentColor().getColor());
-        imagePreviewLayout.setTitle(previewTitle);
+
+        if (cameraContext == CameraContext.MESSAGE) {
+            inject(ConversationController.class).withCurrentConvName(new Callback<String>() {
+                @Override
+                public void callback(String convName) {
+                    imagePreviewLayout.setTitle(convName);
+                }
+            });
+        } else {
+            imagePreviewLayout.setTitle("");
+        }
 
         imagePreviewContainer.removeAllViews();
         imagePreviewContainer.addView(imagePreviewLayout);

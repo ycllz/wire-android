@@ -28,6 +28,7 @@ import android.widget.TextView;
 import com.waz.api.NetworkMode;
 import com.waz.api.User;
 import com.waz.api.Verification;
+import com.waz.model.ConvId;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
@@ -38,6 +39,7 @@ import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.confirmation.TwoButtonConfirmationCallback;
 import com.waz.zclient.controllers.navigation.NavigationController;
+import com.waz.zclient.conversation.ConversationController;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
 import com.waz.zclient.core.stores.network.NetworkAction;
@@ -50,9 +52,9 @@ import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode;
 import com.waz.zclient.ui.animation.fragment.FadeAnimation;
 import com.waz.zclient.ui.theme.OptionsTheme;
 import com.waz.zclient.ui.theme.ThemeUtils;
-import com.waz.zclient.ui.views.e2ee.ShieldView;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.views.e2ee.ShieldView;
 import com.waz.zclient.views.images.ImageAssetImageView;
 import com.waz.zclient.views.menus.FooterMenu;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -310,8 +312,7 @@ public class SingleParticipantFragment extends BaseFragment<SingleParticipantFra
                     // Go to conversation with this user
                     goToConversationWithUser = true;
                     getContainer().dismissUserProfile();
-                    getStoreFactory().conversationStore().setCurrentConversation(user.getConversation(),
-                                                                                    ConversationChangeRequester.START_CONVERSATION);
+                    inject(ConversationController.class).selectConv(new ConvId(user.getConversation().getId()), ConversationChangeRequester.START_CONVERSATION);
                 }
 
                 @Override

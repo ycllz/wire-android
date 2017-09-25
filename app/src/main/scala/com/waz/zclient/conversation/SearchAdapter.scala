@@ -30,7 +30,6 @@ import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.returning
-import com.waz.zclient.controllers.global.SelectionController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.RecyclerCursor
 import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
@@ -43,21 +42,14 @@ TODO: some of this stuff is duplicated from MessagesListAdapter. Maybe there's a
 class SearchAdapter()(implicit context: Context, injector: Injector, eventContext: EventContext) extends RecyclerView.Adapter[ViewHolder] with Injectable { adapter =>
 
   val zms = inject[Signal[ZMessaging]]
-  val selectedConversation = inject[SelectionController].selectedConv
   val contentSearchQuery = inject[CollectionController].contentSearchQuery
-
-  val conv = for {
-    zs <- zms
-    convId <- selectedConversation
-    conv <- Signal future zs.convsStorage.get(convId)
-  } yield conv
 
   val cursor = for {
     zs <- zms
-    Some(c) <- conv
+    convId <- inject[ConversationController].currentConvId
     query <- contentSearchQuery
   } yield
-    new RecyclerCursor(c.id, zs, notifier, messageFilter = Some(MessageFilter(None, Some(query))))
+    new RecyclerCursor(convId, zs, notifier, messageFilter = Some(MessageFilter(None, Some(query))))
 
   private var messages = Option.empty[RecyclerCursor]
   private var convId = ConvId()

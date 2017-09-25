@@ -35,6 +35,7 @@ import com.waz.api.OtrClient;
 import com.waz.api.User;
 import com.waz.api.UsersList;
 import com.waz.model.ConvId;
+import com.waz.model.ConversationData;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.ThemeController;
@@ -44,6 +45,7 @@ import com.waz.zclient.controllers.confirmation.ConfirmationCallback;
 import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.confirmation.TwoButtonConfirmationCallback;
+import com.waz.zclient.conversation.ConversationController;
 import com.waz.zclient.core.stores.connect.ConnectStoreObserver;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
@@ -57,6 +59,7 @@ import com.waz.zclient.pages.main.participants.views.ParticipantsChatheadAdapter
 import com.waz.zclient.pages.main.participants.views.ParticipantsGridView;
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.ui.views.ZetaButton;
+import com.waz.zclient.utils.Callback;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.images.ImageAssetImageView;
@@ -283,7 +286,7 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
 
     @Override
     public void onShowConversationMenu(@IConversationScreenController.ConversationMenuRequester int requester,
-                                       IConversation conversation,
+                                       ConvId convId,
                                        View anchorView) {
 
     }
@@ -350,8 +353,7 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
 
                         // Go to conversation with this user
                         getControllerFactory().getPickUserController().hidePickUserWithoutAnimations(getContainer().getCurrentPickerDestination());
-                        getStoreFactory().conversationStore().setCurrentConversation(user.getConversation(),
-                                                                                        ConversationChangeRequester.START_CONVERSATION);
+                        inject(ConversationController.class).selectConv(new ConvId(user.getConversation().getId()), ConversationChangeRequester.CONVERSATION_LIST);
                         return;
                     }
                 }
@@ -377,7 +379,7 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
                         } else {
                             getControllerFactory().getConversationScreenController().showConversationMenu(
                                 IConversationScreenController.CONVERSATION_DETAILS,
-                                conversation,
+                                new ConvId(conversation.getId()),
                                 null);
                         }
                     }
@@ -524,90 +526,97 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
         footerMenu.setVisibility(View.VISIBLE);
         topBorder.setVisibility(View.INVISIBLE);
 
-        final IConversation conversation = getStoreFactory().conversationStore().getCurrentConversation();
-        if (conversation.getType() == IConversation.Type.ONE_TO_ONE) {
-            if (user.isMe()) {
-                footerMenu.setLeftActionText(getString(R.string.glyph__people));
-                footerMenu.setLeftActionLabelText(getString(R.string.popover__action__profile));
-
-                footerMenu.setRightActionText("");
-                footerMenu.setRightActionLabelText("");
-            } else {
-                footerMenu.setLeftActionText(getString(R.string.glyph__add_people));
-                footerMenu.setLeftActionLabelText(getString(R.string.conversation__action__create_group));
-
-                footerMenu.setRightActionText(getString(R.string.glyph__block));
-                footerMenu.setRightActionLabelText(getString(R.string.popover__action__block));
-            }
-        } else {
-            if (user.isMe()) {
-                footerMenu.setLeftActionText(getString(R.string.glyph__people));
-                footerMenu.setLeftActionLabelText(getString(R.string.popover__action__profile));
-
-                footerMenu.setRightActionText(getString(R.string.glyph__minus));
-                footerMenu.setRightActionLabelText("");
-            } else {
-                footerMenu.setLeftActionText(getString(R.string.glyph__conversation));
-                footerMenu.setLeftActionLabelText(getString(R.string.popover__action__open));
-
-                footerMenu.setRightActionText(getString(R.string.glyph__minus));
-                footerMenu.setRightActionLabelText(getString(R.string.popover__action__remove));
-            }
-        }
-
-        footerMenu.setCallback(new FooterMenuCallback() {
+        //final IConversation conversation = getStoreFactory().conversationStore().getCurrentConversation();
+        inject(ConversationController.class).withCurrentConv(new Callback<ConversationData>() {
             @Override
-            public void onLeftActionClicked() {
-                if (user.isMe() || conversation.getType() != IConversation.Type.ONE_TO_ONE) {
-                    getControllerFactory().getConversationScreenController().hideParticipants(true, false);
+            public void callback(final ConversationData conv) {
+                if (conv.convType() == IConversation.Type.ONE_TO_ONE) {
+                    if (user.isMe()) {
+                        footerMenu.setLeftActionText(getString(R.string.glyph__people));
+                        footerMenu.setLeftActionLabelText(getString(R.string.popover__action__profile));
 
-                    // Go to conversation with this user
-                    getControllerFactory().getPickUserController().hidePickUserWithoutAnimations(getContainer().getCurrentPickerDestination());
-                    getStoreFactory().conversationStore().setCurrentConversation(user.getConversation(),
-                                                                                    ConversationChangeRequester.START_CONVERSATION);
-                } else {
-                    getControllerFactory().getConversationScreenController().addPeopleToConversation();
-                }
-            }
+                        footerMenu.setRightActionText("");
+                        footerMenu.setRightActionLabelText("");
+                    } else {
+                        footerMenu.setLeftActionText(getString(R.string.glyph__add_people));
+                        footerMenu.setLeftActionLabelText(getString(R.string.conversation__action__create_group));
 
-            @Override
-            public void onRightActionClicked() {
-                if (conversation.getType() == IConversation.Type.ONE_TO_ONE) {
-                    if (!user.isMe()) {
-                        getContainer().toggleBlockUser(user,
-                                                       user.getConnectionStatus() != User.ConnectionStatus.BLOCKED);
+                        footerMenu.setRightActionText(getString(R.string.glyph__block));
+                        footerMenu.setRightActionLabelText(getString(R.string.popover__action__block));
                     }
                 } else {
-                    getStoreFactory().networkStore().doIfHasInternetOrNotifyUser(new NetworkAction() {
-                        @Override
-                        public void execute(NetworkMode networkMode) {
-                            if (user.isMe()) {
-                                showLeaveConfirmation(getStoreFactory().conversationStore().getCurrentConversation());
-                            } else {
-                                getContainer().showRemoveConfirmation(user);
-                            }
-                        }
+                    if (user.isMe()) {
+                        footerMenu.setLeftActionText(getString(R.string.glyph__people));
+                        footerMenu.setLeftActionLabelText(getString(R.string.popover__action__profile));
 
-                        @Override
-                        public void onNoNetwork() {
-                            if (user.isMe()) {
-                                ViewUtils.showAlertDialog(getActivity(),
-                                                          R.string.alert_dialog__no_network__header,
-                                                          R.string.leave_conversation_failed__message,
-                                                          R.string.alert_dialog__confirmation,
-                                                          null, true);
-                            } else {
-                                ViewUtils.showAlertDialog(getActivity(),
-                                                          R.string.alert_dialog__no_network__header,
-                                                          R.string.remove_from_conversation__no_network__message,
-                                                          R.string.alert_dialog__confirmation,
-                                                          null, true);
-                            }
-                        }
-                    });
+                        footerMenu.setRightActionText(getString(R.string.glyph__minus));
+                        footerMenu.setRightActionLabelText("");
+                    } else {
+                        footerMenu.setLeftActionText(getString(R.string.glyph__conversation));
+                        footerMenu.setLeftActionLabelText(getString(R.string.popover__action__open));
+
+                        footerMenu.setRightActionText(getString(R.string.glyph__minus));
+                        footerMenu.setRightActionLabelText(getString(R.string.popover__action__remove));
+                    }
                 }
+
+                footerMenu.setCallback(new FooterMenuCallback() {
+                    @Override
+                    public void onLeftActionClicked() {
+                        if (user.isMe() || conv.convType() != IConversation.Type.ONE_TO_ONE) {
+                            getControllerFactory().getConversationScreenController().hideParticipants(true, false);
+
+                            // Go to conversation with this user
+                            getControllerFactory().getPickUserController().hidePickUserWithoutAnimations(getContainer().getCurrentPickerDestination());
+                            inject(ConversationController.class).selectConv(new ConvId(user.getConversation().getId()), ConversationChangeRequester.CONVERSATION_LIST);
+                        } else {
+                            getControllerFactory().getConversationScreenController().addPeopleToConversation();
+                        }
+                    }
+
+                    @Override
+                    public void onRightActionClicked() {
+                        if (conv.convType() == IConversation.Type.ONE_TO_ONE) {
+                            if (!user.isMe()) {
+                                getContainer().toggleBlockUser(user,
+                                    user.getConnectionStatus() != User.ConnectionStatus.BLOCKED);
+                            }
+                        } else {
+                            getStoreFactory().networkStore().doIfHasInternetOrNotifyUser(new NetworkAction() {
+                                @Override
+                                public void execute(NetworkMode networkMode) {
+                                    if (user.isMe()) {
+                                        showLeaveConfirmation(conv.id());
+                                    } else {
+                                        getContainer().showRemoveConfirmation(user);
+                                    }
+                                }
+
+                                @Override
+                                public void onNoNetwork() {
+                                    if (user.isMe()) {
+                                        ViewUtils.showAlertDialog(getActivity(),
+                                            R.string.alert_dialog__no_network__header,
+                                            R.string.leave_conversation_failed__message,
+                                            R.string.alert_dialog__confirmation,
+                                            null, true);
+                                    } else {
+                                        ViewUtils.showAlertDialog(getActivity(),
+                                            R.string.alert_dialog__no_network__header,
+                                            R.string.remove_from_conversation__no_network__message,
+                                            R.string.alert_dialog__confirmation,
+                                            null, true);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
             }
         });
+
+
+
     }
 
     @Override
@@ -615,7 +624,8 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
 
     }
 
-    private void showLeaveConfirmation(final IConversation conversation) {
+    private void showLeaveConfirmation(final ConvId convId) {
+        final ConversationController conversationController = inject(ConversationController.class);
         ConfirmationCallback callback = new TwoButtonConfirmationCallback() {
             @Override
             public void positiveButtonClicked(boolean checkboxIsSelected) {
@@ -625,9 +635,9 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
                     getControllerFactory().isTornDown()) {
                     return;
                 }
-                getStoreFactory().conversationStore().leave(conversation);
-                getStoreFactory().conversationStore().setCurrentConversationToNext(
-                    ConversationChangeRequester.LEAVE_CONVERSATION);
+
+                conversationController.leave(convId);
+
                 if (LayoutSpec.isTablet(getActivity())) {
                     getControllerFactory().getConversationScreenController().hideParticipants(false, true);
                 }

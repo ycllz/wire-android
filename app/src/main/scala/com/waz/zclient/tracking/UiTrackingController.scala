@@ -18,7 +18,9 @@
 package com.waz.zclient.tracking
 
 import android.content.Context
+
 import com.waz.utils.events.EventContext
+
 import com.waz.zclient.cursor.{CursorController, CursorMenuItem}
 import com.waz.zclient.tracking.ContributionEvent.Action
 import com.waz.zclient.{Injectable, Injector}
