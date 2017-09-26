@@ -32,6 +32,8 @@ import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
 import com.waz.zclient.{Injectable, Injector}
 import org.threeten.bp.Instant
 
+import scala.concurrent.Future
+
 class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNotifier, val messageFilter: Option[MessageFilter] = None)(implicit inj: Injector, ev: EventContext) extends Injectable { self =>
 
   import com.waz.threading.Threading.Implicits.Ui
@@ -48,7 +50,7 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
 
   private val window = new IndexWindow(this, adapter)
   private var closed = false
-  private val cursor = Signal(Option.empty[MessagesCursor])
+  private var cursor = Option.empty[MessagesCursor]
   private var subs = Seq.empty[Subscription]
   private var onChangedSub = Option.empty[Subscription]
 
@@ -74,7 +76,7 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
     verbose(s"close")
     Threading.assertUiThread()
     closed = true
-    cursor ! None
+    cursor = None
     subs.foreach(_.destroy())
     onChangedSub.foreach(_.destroy())
     subs = Nil
@@ -86,7 +88,7 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
   private def setCursor(c: MessagesCursor) = {
     verbose(s"setCursor: c: $c, count: ${c.size}")
     if (!closed) {
-      self.cursor ! Some(c)
+      self.cursor = Some(c)
       cursorLoaded ! true
       window.cursorChanged(c)
       notifyFromHistory(c.createTime)
@@ -110,9 +112,9 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
     window.onUpdated(prev.message, current.message)
   }
 
-  def count: Int = cursor.currentValue.flatMap(_.map(_.size)).getOrElse(0)
+  def count: Int = cursor.map(_.size).getOrElse(0)
 
-  def apply(position: Int): MessageAndLikes = cursor.currentValue.getOrElse(None).fold2(null, { c =>
+  def apply(position: Int): MessageAndLikes = cursor.fold2(null, { c =>
     if (window.shouldReload(position)) {
       verbose(s"reloading window at position: $position")
       window.reload(c, position)
@@ -121,10 +123,15 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
     c(position)
   })
 
-  def lastReadIndex() = cursor.currentValue.flatMap(_.map(_.lastReadIndex)).getOrElse(-1)
+  def lastReadIndex() = cursor.map(_.lastReadIndex).getOrElse(-1)
 
-  def positionForMessage(messageData: MessageData) =
-    cursor.collect { case Some(c) => c } .head.flatMap(_.asyncIndexOf(messageData.time, binarySearch = true))
+  def positionForMessage(messageData: MessageData) = {
+    cursorLoaded.collect{ case true => cursor }.head.flatMap {
+      case Some(c) => c.asyncIndexOf(messageData.time, binarySearch = true)
+      case _ => Future.successful(-1)
+    } (Threading.Background)
+  }
+
 }
 
 object RecyclerCursor {

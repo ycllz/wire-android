@@ -30,11 +30,11 @@ import com.waz.api.MessageFilter
 import com.waz.model.{AssetId, MessageData}
 import com.waz.service.ZMessaging
 import com.waz.service.messages.MessageAndLikes
-import com.waz.threading.Threading
-import com.waz.utils.events.{EventContext, EventStream, Signal, SourceSignal}
+import com.waz.threading.{CancellableFuture, Threading}
+import com.waz.utils.events._
 import com.waz.zclient.controllers.global.SelectionController
 import com.waz.zclient.conversation.CollectionController
-import com.waz.zclient.conversation.CollectionController.{AllContent, ContentType, Images}
+import com.waz.zclient.conversation.CollectionController.Images
 import com.waz.zclient.messages.RecyclerCursor
 import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
 import com.waz.zclient.messages.controllers.MessageActionsController
@@ -87,7 +87,14 @@ class ImageViewPager(context: Context, attrs: AttributeSet) extends ViewPager(co
       override def onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int): Unit = {}
       override def onPageSelected(position: Int): Unit = collectionController.focusedItem ! adapter.getItem(position)
     })
-    messageData.flatMap(adapter.positionForMessage).on(Threading.Ui) { pos => if (pos >= 0) setCurrentItem(pos, false) }
+    messageData.flatMap(adapter.positionForMessage).on(Threading.Ui) { pos =>
+      if (pos >= 0)
+        setCurrentItem(pos, true)
+      else {
+        collectionController.focusedItem ! adapter.getItem(getCurrentItem)
+      }
+
+    }
     adapter
   }
 
@@ -120,8 +127,7 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
 
   private val zms = inject[Signal[ZMessaging]]
   private val selectedConversation = inject[SelectionController].selectedConv
-
-  val contentMode = Signal[ContentType](AllContent)
+  private val cursorChanged = EventStream[Unit]()
 
   val conv = for {
     zs <- zms
@@ -139,6 +145,11 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
     override def notifyItemRangeRemoved(pos: Int, count: Int): Unit = self.notifyDataSetChanged()
   }
 
+  override def notifyDataSetChanged() = {
+    super.notifyDataSetChanged()
+    cursorChanged ! (())
+  }
+
   var recyclerCursor: Option[RecyclerCursor] = None
   val cursor = for {
     zs <- zms
@@ -150,7 +161,7 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
   def positionForMessage(msg: MessageData): Signal[Int] =
     for {
     c <- cursor
-    pos <- Signal.future(c.positionForMessage(msg))
+    pos <- new RefreshingSignal(CancellableFuture.lift(c.positionForMessage(msg)), cursorChanged)
   } yield pos
 
   cursor.on(Threading.Ui) { c =>
@@ -186,6 +197,8 @@ class ImageSwipeAdapter(context: Context)(implicit injector: Injector, ev: Event
   override def isViewFromObject(view: View, obj: scala.Any): Boolean = view.getTag.equals(obj.asInstanceOf[View].getTag)
 
   override def getCount: Int = recyclerCursor.fold(0)(_.count)
+
+  override def getItemPosition(obj: scala.Any) = PagerAdapter.POSITION_NONE
 }
 
 class SwipeImageView(context: Context, attrs: AttributeSet, style: Int)(implicit injector: Injector, ev: EventContext) extends TouchImageView(context, attrs, style) with Injectable {
