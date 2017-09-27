@@ -89,7 +89,7 @@ class ImageViewPager(context: Context, attrs: AttributeSet) extends ViewPager(co
     })
     messageData.flatMap(adapter.positionForMessage).on(Threading.Ui) { pos =>
       if (pos >= 0)
-        setCurrentItem(pos, true)
+        setCurrentItem(pos, false)
       else {
         collectionController.focusedItem ! adapter.getItem(getCurrentItem)
       }

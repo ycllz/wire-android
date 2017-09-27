@@ -178,7 +178,7 @@ class ImageFragment extends BaseFragment[ImageFragment.Container] with FragmentH
           Option(getArguments.getString(MESSAGE_ID_ARG)).foreach { messageId =>
             zms.head.flatMap(_.messagesStorage.get(MessageId(messageId))).map { _.foreach(msg => collectionController.focusedItem ! Some(msg)) }
             val imageSignal: Signal[ImageSource] = zms.flatMap(_.messagesStorage.signal(MessageId(messageId))).map(msg => WireImage(msg.assetId))
-            animateOpeningTransition(new ImageAssetDrawable(imageSignal))
+            animateOpeningTransition(new ImageAssetDrawable(imageSignal, animate = false))
           }
         }
       }
