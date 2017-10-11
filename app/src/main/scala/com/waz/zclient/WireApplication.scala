@@ -106,6 +106,8 @@ object WireApplication {
     bind [SelectionController]     to new SelectionController()
     bind [SoundController]         to new SoundController
     bind [ThemeController]         to new ThemeController
+    bind [SignInController]        to new SignInController()
+    bind [AppEntryController]      to new AppEntryController()
 
     //notifications
     bind [MessageNotificationsController]  to new MessageNotificationsController()
@@ -159,8 +161,6 @@ object WireApplication {
     bind [CollectionController]      to new CollectionController()
     bind [UiStorage]                 to new UiStorage()
     bind [BackStackNavigator]        to new BackStackNavigator()
-    bind [AppEntryController]        to new AppEntryController()
-    bind [SignInController]          to new SignInController()
 
     bind [CursorController]           to new CursorController()
     bind [ConversationListController] to new ConversationListController()

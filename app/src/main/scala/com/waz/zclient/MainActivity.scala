@@ -17,6 +17,7 @@
  */
 package com.waz.zclient
 
+import android.content.DialogInterface.OnClickListener
 import android.content.Intent._
 import android.content.res.Configuration
 import android.content.{DialogInterface, Intent}
@@ -40,11 +41,12 @@ import com.waz.zclient.Intents._
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.calling.controllers.CallPermissionsController
 import com.waz.zclient.common.controllers.PermissionsController
+import com.waz.zclient.controllers.SignInController.{Email, Login, SignInMethod}
 import com.waz.zclient.controllers.accentcolor.AccentColorChangeRequester
 import com.waz.zclient.controllers.calling.CallingObserver
 import com.waz.zclient.controllers.global.{AccentColorController, SelectionController}
 import com.waz.zclient.controllers.navigation.{NavigationControllerObserver, Page}
-import com.waz.zclient.controllers.{SharingController, UserAccountsController}
+import com.waz.zclient.controllers.{SharingController, SignInController, UserAccountsController}
 import com.waz.zclient.core.stores.api.ZMessagingApiStoreObserver
 import com.waz.zclient.core.stores.connect.{ConnectStoreObserver, IConnectStore}
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
@@ -285,6 +287,29 @@ class MainActivity extends BaseActivity
     openSignUpPage()
   }
 
+  private def onTeamAccountCreated(email: String) = {
+    val accountsController = inject[UserAccountsController]
+    val signInController = inject[SignInController]
+    accountsController.accounts.foreach { accounts =>
+      if(accounts.length == 2) {
+        val handler = new OnClickListener {
+          override def onClick(dialog: DialogInterface, which: Int): Unit = {
+            dialog.dismiss()
+          }
+        }
+        ViewUtils.showAlertDialog(this, R.string.max_accounts_reached__dialog_title,
+                                  R.string.max_accounts_reached__dialog_text, android.R.string.ok,
+                                  handler, false)
+      } else {
+        ZMessaging.accountsService.flatMap(_.logout(false)).map { _ =>
+          signInController.uiSignInState ! SignInMethod(Login, Email)
+          signInController.email ! email
+          signInController.password ! ""
+        }
+      }
+    }
+  }
+
   private def onUserLoggedInAndVerified(self: Self) = {
     verbose("onUserLoggedInAndVerified")
     getStoreFactory.profileStore.setUser(self)
@@ -346,6 +371,14 @@ class MainActivity extends BaseActivity
         case Intents.Page.Settings => startActivityForResult(PreferencesActivity.getDefaultIntent(this), PreferencesActivity.SwitchAccountCode)
         case _ => error(s"Unknown page: $page - ignoring intent")
       }
+
+      case AccountCreatedIntent(uri) =>
+        val email = uri.getQueryParameter("email")
+        if(email != null) {
+          onTeamAccountCreated(email)
+        } else {
+          error("Expected email in team account intent but none was given")
+        }
 
       case _ => setIntent(intent)
     }
