@@ -34,10 +34,10 @@ class OptionsMenuController(implicit injector: Injector, context: Context, ec: E
 
   private var convChangedCallback = Option.empty[Callback[ConversationData]]
 
-  def onMenuConversationHasChanged(callback: Callback[ConversationData]): Unit = convChangedCallback = Some(callback)
+  def onMenuConversationHasChanged(callback: Callback[ConversationData]): Unit = convChangedCallback = Option(callback)
 
   convId.flatMap {
-    case Some(id)   => convController.changeInConv(id)
+    case Some(id)   => convController.conversationData(id)
     case _          => Signal.const(Option.empty[ConversationData])
   }.onUi {
     case Some(conv) => convChangedCallback.foreach(_.callback(conv))

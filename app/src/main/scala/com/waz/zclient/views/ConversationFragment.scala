@@ -17,7 +17,7 @@
  */
 package com.waz.zclient.views
 
-import android.content.{DialogInterface, Intent}
+import android.content.{Context, DialogInterface, Intent}
 import android.os.{Build, Bundle}
 import android.provider.MediaStore
 import android.support.annotation.Nullable
@@ -38,6 +38,7 @@ import com.waz.model.{AssetId, ConvId, ConversationData, MessageData}
 import com.waz.model.ConversationData.ConversationType
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
+import com.waz.utils.returningF
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.Intents.ShowDevicesIntent
 import com.waz.zclient.camera.controllers.GlobalCameraController
@@ -76,6 +77,7 @@ import com.waz.zclient.ui.cursor.CursorMenuItem
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.{LayoutSpec, PermissionUtils, SquareOrientation, ViewUtils}
 import com.waz.zclient.views.e2ee.ShieldView
+import com.waz.zclient.utils.ContextUtils._
 
 import scala.concurrent.duration._
 import scala.collection.mutable
@@ -97,11 +99,9 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private var assetIntentsManager: Option[AssetIntentsManager] = None
   private val sharingUris = new mutable.ListBuffer[URI]()
 
-  private var typingIndicatorView: TypingIndicatorView = _
   private var loadingIndicatorView: LoadingIndicatorView = _
   private var containerPreview: ViewGroup = _
   private var cursorView: CursorView = _
-  private var shieldView: ShieldView = _
   private var audioMessageRecordingView: AudioMessageRecordingView = _
   private var extendedCursorContainer: ExtendedCursorContainer = _
   private var toolbarTitle: TextView = _
@@ -111,13 +111,14 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private var toolbar: Toolbar = _
 
   override def onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation = {
+    implicit val ctx: Context = getActivity
     if (nextAnim == 0 || Option(getContainer).isEmpty || getControllerFactory.isTornDown) super.onCreateAnimation(transit, enter, nextAnim)
     else if (nextAnim == R.anim.fragment_animation_swap_profile_conversation_tablet_in ||
              nextAnim == R.anim.fragment_animation_swap_profile_conversation_tablet_out) new MessageStreamAnimation(
       enter,
-      getResources.getInteger(R.integer.wire__animation__duration__medium),
+      getInt(R.integer.wire__animation__duration__medium),
       0,
-      ViewUtils.getOrientationDependentDisplayWidth(getActivity) - getResources.getDimensionPixelSize(R.dimen.framework__sidebar_width)
+      getOrientationDependentDisplayWidth - getResources.getDimensionPixelSize(R.dimen.framework__sidebar_width)
     )
     else if (getControllerFactory.getPickUserController.isHideWithoutAnimations) new ConversationListAnimation(
       0,
@@ -132,8 +133,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       0,
       getResources.getDimensionPixelSize(R.dimen.open_new_conversation__thread_list__max_top_distance),
       enter,
-      getResources.getInteger(R.integer.framework_animation_duration_long),
-      getResources.getInteger(R.integer.framework_animation_duration_medium),
+      getInt(R.integer.framework_animation_duration_long),
+      getInt(R.integer.framework_animation_duration_medium),
       false,
       1f
     )
@@ -141,7 +142,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       0,
       getResources.getDimensionPixelSize(R.dimen.open_new_conversation__thread_list__max_top_distance),
       enter,
-      getResources.getInteger(R.integer.framework_animation_duration_medium),
+      getInt(R.integer.framework_animation_duration_medium),
       0,
       false,
       1f
@@ -166,61 +167,77 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   override def onStart(): Unit = {
     super.onStart()
 
-    typingIndicatorView = ViewUtils.getView(getView, R.id.tiv_typing_indicator_view)
-    loadingIndicatorView = ViewUtils.getView(getView, R.id.lbv__conversation__loading_indicator)
-    containerPreview = ViewUtils.getView(getView, R.id.fl__conversation_overlay)
-    cursorView = ViewUtils.getView(getView, R.id.cv__cursor)
-    shieldView = ViewUtils.getView(getView, R.id.sv__conversation_toolbar__verified_shield)
-    audioMessageRecordingView = ViewUtils.getView(getView, R.id.amrv_audio_message_recording)
-    extendedCursorContainer = ViewUtils.getView(getView, R.id.ecc__conversation)
-    listView = ViewUtils.getView(getView, R.id.messages_list_view)
+    implicit val ctx: Context = getActivity
+
+    findById(R.id.tiv_typing_indicator_view)
+
+    loadingIndicatorView = findById(R.id.lbv__conversation__loading_indicator)
+    containerPreview = findById(R.id.fl__conversation_overlay)
+    cursorView = findById(R.id.cv__cursor)
+
+    extendedCursorContainer = findById(R.id.ecc__conversation)
+    listView = findById(R.id.messages_list_view)
+
+    returningF( findById(R.id.sv__conversation_toolbar__verified_shield) ){ view: ShieldView =>
+      view.setVisibility(View.GONE)
+    }
+
+    // Recording audio messages
+    audioMessageRecordingView = returningF( findById( R.id.amrv_audio_message_recording) ){ view: AudioMessageRecordingView =>
+      view.setVisibility(View.INVISIBLE)
+      view.setCallback(audioMessageRecordingCallback)
+    }
 
     // invisible footer to scroll over inputfield
-    val invisibleFooter = new FrameLayout(getActivity)
-    invisibleFooter.setLayoutParams(
-      new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources.getDimensionPixelSize(R.dimen.cursor__list_view_footer__height))
-    )
+    returningF( new FrameLayout(getActivity) ){ footer: FrameLayout =>
+      footer.setLayoutParams(
+        new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources.getDimensionPixelSize(R.dimen.cursor__list_view_footer__height))
+      )
+    }
 
-    leftMenu = ViewUtils.getView(getView, R.id.conversation_left_menu)
-    leftMenu.setOnMenuItemClickListener(new ActionMenuView.OnMenuItemClickListener() {
-      override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
-        case R.id.action_collection =>
-          collectionController.openCollection()
-          true
-        case _ => false
-      }
-    })
+    leftMenu = returningF( findById(R.id.conversation_left_menu) ){ menu: ActionMenuView =>
+      menu.setOnMenuItemClickListener(new ActionMenuView.OnMenuItemClickListener() {
+        override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
+          case R.id.action_collection =>
+            collectionController.openCollection()
+            true
+          case _ => false
+        }
+      })
+    }
 
-    toolbar = ViewUtils.getView(getView, R.id.t_conversation_toolbar)
 
-    toolbar.setOnClickListener(new View.OnClickListener() {
-      override def onClick(v: View): Unit =
-        getControllerFactory.getConversationScreenController.showParticipants(toolbar, false)
-    })
+    toolbar = returningF( findById(R.id.t_conversation_toolbar) ) { t: Toolbar =>
 
-    toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
-      override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
-        case R.id.action_audio_call =>
-          getControllerFactory.getCallingController.startCall(false)
+      t.setOnClickListener(new View.OnClickListener() {
+        override def onClick(v: View): Unit =
+          getControllerFactory.getConversationScreenController.showParticipants(t, false)
+      })
+
+      t.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+        override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
+          case R.id.action_audio_call =>
+            getControllerFactory.getCallingController.startCall(false)
+            cursorView.closeEditMessage(false)
+            true
+          case R.id.action_video_call =>
+            getControllerFactory.getCallingController.startCall(true)
+            cursorView.closeEditMessage(false)
+            true
+          case _ => false
+        }
+      })
+
+      t.setNavigationOnClickListener(new View.OnClickListener() {
+        override def onClick(v: View): Unit = {
           cursorView.closeEditMessage(false)
-          true
-        case R.id.action_video_call =>
-          getControllerFactory.getCallingController.startCall(true)
-          cursorView.closeEditMessage(false)
-          true
-        case _ => false
-      }
-    })
+          getActivity.onBackPressed()
+          KeyboardUtils.closeKeyboardIfShown(getActivity)
+        }
+      })
+    }
 
-    toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-      override def onClick(v: View): Unit = {
-        cursorView.closeEditMessage(false)
-        getActivity.onBackPressed()
-        KeyboardUtils.closeKeyboardIfShown(getActivity)
-      }
-    })
-
-    if (LayoutSpec.isTablet(getContext) && ViewUtils.isInLandscape(getContext)) toolbar.setNavigationIcon(null)
+    if (LayoutSpec.isTablet(getContext) && isInLandscape(getContext)) toolbar.setNavigationIcon(null)
 
     toolbarTitle = ViewUtils.getView(toolbar, R.id.tv__conversation_toolbar__title).asInstanceOf[TextView]
 
@@ -244,16 +261,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     getStoreFactory.inAppNotificationStore.addInAppNotificationObserver(syncErrorObserver)
     getControllerFactory.getSlidingPaneController.addObserver(slidingPaneObserver)
 
-    shieldView.setVisibility(View.GONE)
-
-    // Recording audio messages
-    audioMessageRecordingView.setVisibility(View.INVISIBLE)
-    audioMessageRecordingView.setCallback(audioMessageRecordingCallback)
-
-    convController.currentConv.onUi {
-      case Some(conv) => toolbarTitle.setText(conv.displayName)
-      case None =>
-    }
+    convController.currentConv.onUi { conv => toolbarTitle.setText(conv.displayName) }
 
     Signal.wrap(convChange).zip(previewShown).onUi {
       case (ConversationChange(Some(from), Some(to), _), true) if from != to => imagePreviewCallback.onCancelPreview()
@@ -261,7 +269,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     }
 
     convController.currentConv.onUi {
-      case Some(conv) if conv.isActive =>
+      case conv if conv.isActive =>
         inflateCollectionIcon()
         convController.isGroup(conv).foreach { isGroup =>
           toolbar.getMenu.clear()
@@ -324,6 +332,13 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     extendedCursorContainer.close(true)
     extendedCursorContainer.setCallback(null)
     cursorView.setCallback(null)
+
+    toolbar.setOnClickListener(null)
+    toolbar.setOnMenuItemClickListener(null)
+    toolbar.setNavigationOnClickListener(null)
+    audioMessageRecordingView.setCallback(null)
+    leftMenu.setOnMenuItemClickListener(null)
+
     getControllerFactory.getGlobalLayoutController.removeKeyboardHeightObserver(extendedCursorContainer)
     getControllerFactory.getGlobalLayoutController.removeKeyboardVisibilityObserver(extendedCursorContainer)
 
@@ -641,16 +656,15 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private val orientationControllerObserver = new  OrientationControllerObserver {
     override def onOrientationHasChanged(squareOrientation: SquareOrientation): Unit = inLandscape.head.foreach { oldInLandscape =>
-      val newInLandscape = ViewUtils.isInLandscape(getContext)
+      implicit val ctx: Context = getActivity
+      val newInLandscape = isInLandscape
       oldInLandscape match {
         case Some(landscape) if landscape != newInLandscape =>
           val conversationListVisible = getControllerFactory.getNavigationController.getCurrentPage eq Page.CONVERSATION_LIST
-          if (newInLandscape && !conversationListVisible) {
-            val duration = getResources.getInteger(R.integer.framework_animation_duration_short)
-            CancellableFuture.delayed(duration.millis){
+          if (newInLandscape && !conversationListVisible)
+            CancellableFuture.delayed(getInt(R.integer.framework_animation_duration_short).millis){
               Option(getActivity).foreach(_.onBackPressed())
             }
-          }
         case _ =>
       }
       inLandscape ! Some(newInLandscape)
@@ -856,7 +870,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     override def onPanelClosed(panel: View): Unit = {}
   }
 
-  private def splitPortraitMode = LayoutSpec.isTablet(getActivity) && ViewUtils.isInPortrait(getActivity) && getControllerFactory.getNavigationController.getPagerPosition == 0
+  private def splitPortraitMode = LayoutSpec.isTablet(getActivity) && isInPortrait(getActivity) && getControllerFactory.getNavigationController.getPagerPosition == 0
 
   private def hideAudioMessageRecording(): Unit = if (audioMessageRecordingView.getVisibility == View.VISIBLE) {
     audioMessageRecordingView.reset()

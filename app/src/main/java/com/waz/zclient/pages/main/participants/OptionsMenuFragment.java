@@ -156,6 +156,8 @@ public class OptionsMenuFragment extends BaseFragment<OptionsMenuFragment.Contai
     @Override
     public void onStop() {
         getContainer().getOptionsMenuControl().setCallback(null);
+        ctrl.onMenuConversationHasChanged(null);
+        ctrl = null;
         getStoreFactory().singleParticipantStore().removeSingleParticipantObserver(this);
         disconnectConversation();
         disconnectUser();

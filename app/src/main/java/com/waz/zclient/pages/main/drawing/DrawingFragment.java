@@ -73,6 +73,7 @@ import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.PermissionUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.utils.debug.ShakeEventListener;
+import com.waz.zclient.utils.ContextUtils;
 
 import java.util.Locale;
 
@@ -370,7 +371,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
             drawingViewTip.setTextColor(getResources().getColor(R.color.drawing__tip__font__color_image, getContext().getTheme()));
         }
         cancelLoadHandle();
-        bitmapLoadHandle = backgroundImage.getSingleBitmap(ViewUtils.getOrientationDependentDisplayWidth(getActivity()), new BitmapCallback() {
+        bitmapLoadHandle = backgroundImage.getSingleBitmap(ContextUtils.getOrientationDependentDisplayWidth(getActivity()), new BitmapCallback() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap) {
                 if (getActivity() == null || drawingCanvasView == null) {

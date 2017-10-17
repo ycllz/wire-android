@@ -46,7 +46,7 @@ class MessagesListAdapter(listDim: Signal[Dim2])(implicit inj: Injector, ec: Eve
   val cursor = for {
     zs <- zms
     cId <- conversationController.currentConvId
-    Some(convType) <- conversationController.currentConvType
+    convType <- conversationController.currentConvType
   } yield {
     (new RecyclerCursor(cId, zs, notifier), convType)
   }

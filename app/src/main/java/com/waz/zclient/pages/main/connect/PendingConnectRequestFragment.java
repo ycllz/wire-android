@@ -48,6 +48,7 @@ import com.waz.zclient.ui.views.ZetaButton;
 import com.waz.zclient.utils.Callback;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.views.images.ImageAssetImageView;
 import com.waz.zclient.views.menus.FooterMenu;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -111,8 +112,8 @@ public class PendingConnectRequestFragment extends BaseFragment<PendingConnectRe
             // No animation when request is shown in conversation list
             IConnectStore.UserRequester userRequester = IConnectStore.UserRequester.valueOf(getArguments().getString(ARGUMENT_USER_REQUESTER));
             if (userRequester != IConnectStore.UserRequester.CONVERSATION || isBelowUserProfile) {
-                int centerX = ViewUtils.getOrientationIndependentDisplayWidth(getActivity()) / 2;
-                int centerY = ViewUtils.getOrientationIndependentDisplayHeight(getActivity()) / 2;
+                int centerX = ContextUtils.getOrientationIndependentDisplayWidth(getActivity()) / 2;
+                int centerY = ContextUtils.getOrientationIndependentDisplayHeight(getActivity()) / 2;
                 int duration;
                 int delay = 0;
                 if (isBelowUserProfile) {
@@ -186,7 +187,7 @@ public class PendingConnectRequestFragment extends BaseFragment<PendingConnectRe
             public void onClick(View v) {
                 switch (userRequester) {
                     case CONVERSATION:
-                        if (LayoutSpec.isTablet(getContext()) && ViewUtils.isInLandscape(getContext())) {
+                        if (LayoutSpec.isTablet(getContext()) && ContextUtils.isInLandscape(getContext())) {
                             return;
                         }
                         getActivity().onBackPressed();
@@ -443,8 +444,8 @@ public class PendingConnectRequestFragment extends BaseFragment<PendingConnectRe
             return;
         }
         if (userRequester == IConnectStore.UserRequester.CONVERSATION &&
-            (ViewUtils.isInLandscape(getContext()) ||
-             (newConfig != null && ViewUtils.isInLandscape(newConfig)))) {
+            (ContextUtils.isInLandscape(getContext()) ||
+             (newConfig != null && ContextUtils.isInLandscape(newConfig)))) {
             toolbar.setNavigationIcon(null);
         } else {
             switch (userRequester) {

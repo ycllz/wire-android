@@ -81,6 +81,7 @@ import com.waz.zclient.pages.main.profile.camera.CameraFragment;
 import com.waz.zclient.ui.animation.interpolators.penner.Quart;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.MathUtils;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.Callback;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
@@ -169,7 +170,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
         super.onViewCreated(view, savedInstanceState);
         Configuration newConfig = getActivity().getResources().getConfiguration();
 
-        boolean isInLandscape = ViewUtils.isInLandscape(newConfig);
+        boolean isInLandscape = ContextUtils.isInLandscape(newConfig);
         getControllerFactory().getNavigationController().setIsLandscape(isInLandscape);
 
         slidingPaneLayout.setSideBarWidth(newConfig);
@@ -322,7 +323,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
             }
         });
 
-        if (ViewUtils.isInPortrait(getActivity()) && change.requester() != ConversationChangeRequester.FIRST_LOAD) {
+        if (ContextUtils.isInPortrait(getActivity()) && change.requester() != ConversationChangeRequester.FIRST_LOAD) {
             slidingPaneLayout.closePane();
             getControllerFactory().getSlidingPaneController().onPanelClosed(leftView);
         }
@@ -335,7 +336,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
         int animIn = R.anim.fragment_animation_swap_conversation_tablet_in;
         int animOut = R.anim.fragment_animation_swap_conversation_tablet_out;
 
-        if (ViewUtils.isInPortrait(getActivity())) {
+        if (ContextUtils.isInPortrait(getActivity())) {
             animIn = R.anim.fragment_animation_portrait_swap_conversation_tablet_in;
             animOut = R.anim.fragment_animation_swap_conversation_tablet_out;
         }
@@ -639,7 +640,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
             @Override
             public void run() {
                 FragmentActivity activity = getActivity();
-                if (activity == null || slidingPaneLayout == null || ViewUtils.isInLandscape(activity)) {
+                if (activity == null || slidingPaneLayout == null || ContextUtils.isInLandscape(activity)) {
                     return;
                 }
 

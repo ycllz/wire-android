@@ -20,7 +20,7 @@ package com.waz.zclient.controllers.currentfocus;
 import android.content.Context;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.utils.LayoutSpec;
-import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.utils.ContextUtils;
 import timber.log.Timber;
 
 public class FocusController implements IFocusController {
@@ -51,7 +51,7 @@ public class FocusController implements IFocusController {
             return;
         }
 
-        if (ViewUtils.isInPortrait(context) &&
+        if (ContextUtils.isInPortrait(context) &&
             pagerPosition == 0 &&
             conversationlistSearchIsOpen) {
             setFocus(IFocusController.CONVERSATION_LIST_SEARCHBOX);

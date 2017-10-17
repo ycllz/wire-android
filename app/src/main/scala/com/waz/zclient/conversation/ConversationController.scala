@@ -23,7 +23,7 @@ import com.waz.model.ConversationData.ConversationType
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.utils.events.{EventContext, EventStream, Signal}
+import com.waz.utils.events.{EventContext, EventStream, Signal, SourceStream}
 import com.waz.zclient.controllers.UserAccountsController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
@@ -55,37 +55,25 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   private var lastConvId = Option.empty[ConvId]
 
-  val currentConvId = zms.flatMap(_.convsStats.selectedConversationId).collect { case Some(convId) => convId }
-  val currentConv: Signal[Option[ConversationData]] = currentConvId.flatMap { changeInConv } // updates on every change of the conversation data, not only on switching
+  val currentConvId: Signal[ConvId] = zms.flatMap(_.convsStats.selectedConversationId).collect { case Some(convId) => convId }
+  val currentConvOpt: Signal[Option[ConversationData]] = currentConvId.flatMap { conversationData } // updates on every change of the conversation data, not only on switching
+  val currentConv: Signal[ConversationData] = currentConvOpt.collect { case Some(conv) => conv }
 
-  val convChanged = EventStream[ConversationChange]()
-  val currentConvRequester: Signal[Option[ConversationChangeRequester]] = Signal.wrap(Option.empty[ConversationChangeRequester], convChanged.map(c => Option(c.requester)))
+  val convChanged: SourceStream[ConversationChange] = EventStream[ConversationChange]()
 
-  def changeInConv(convId: ConvId): Signal[Option[ConversationData]] = storage.flatMap(_.optSignal(convId))
+  def conversationData(convId: ConvId): Signal[Option[ConversationData]] = storage.flatMap(_.optSignal(convId))
 
-  val currentConvType: Signal[Option[ConversationType]] = for { // convType can be changed only by switching to a new conversation
-    id <- currentConvId
-    conv <- Signal.future(loadConv(id))
-  } yield conv.map(_.convType)
-
-  val currentConvName: Signal[String] = currentConv.map { // the name of the current conversation can be edited (without switching)
-    case Some(conv) => conv.displayName
-    case _ => ""
-  }
-
-  val currentConvIsVerified: Signal[Boolean] = currentConv.map(_.fold(false)(_.verified == Verification.VERIFIED))
-
-  val currentConvIsGroup: Signal[Boolean] = currentConv.flatMap {
-    case Some(conv) => Signal.future(isGroup(conv))
-    case None => Signal.const(false)
-  }
+  val currentConvType: Signal[ConversationType] = currentConv.map(_.convType)
+  val currentConvName: Signal[String] = currentConv.map { _.displayName } // the name of the current conversation can be edited (without switching)
+  val currentConvIsVerified: Signal[Boolean] = currentConv.map { _.verified == Verification.VERIFIED }
+  val currentConvIsGroup: Signal[Boolean] = currentConv.flatMap { conv => Signal.future(isGroup(conv)) }
 
   for {
     z <- zms
     convId <- currentConvId
   } yield z.conversations.forceNameUpdate(convId)
 
-  def withCurrentConv(f: (ConversationData) => Unit): Future[Unit] = currentConv.collect { case Some(c) => c }.head.map(f)
+  def withCurrentConv(f: (ConversationData) => Unit): Future[Unit] = currentConv.head.map(f)
 
   // this should be the only UI entry point to change conv in SE
   def selectConv(convId: Option[ConvId], requester: ConversationChangeRequester): Future[Unit] = convId match {
@@ -98,9 +86,6 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   }
 
   def selectConv(id: ConvId, requester: ConversationChangeRequester): Future[Unit] = selectConv(Some(id), requester)
-
-  def onConvRequesterChanged(callback: Callback[ConversationChangeRequester]): Unit =
-    currentConvRequester.onUi { r => callback.callback(r.orNull) }
 
   def loadConv(convId: ConvId): Future[Option[ConversationData]] = storage.head.flatMap(_.get(convId))
 
@@ -155,11 +140,10 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     convId <- currentConvId.head
   } yield z.convsUi.sendMessage(convId, location)
 
-  def setCurrentConvName(name: String): Future[Unit] = currentConvId.head.map { id => setName(id, name) }
-  def setName(id: ConvId, name: String): Future[Unit] = for {
+  def setCurrentConvName(name: String): Future[Unit] = for {
     z <- zms.head
-    Some(conv) <- loadConv(id)
-  } yield if (conv.displayName != name) z.convsUi.setConversationName(id, name)  else Future.successful({})
+    convId <- currentConvId.head
+  } yield z.convsUi.setConversationName(convId, name)
 
   def addMembers(id: ConvId, users: Set[UserId]): Future[Unit] = zms.head.map { _.convsUi.addConversationMembers(id, users.toSeq) }
 
@@ -174,9 +158,9 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     }
 
   def setCurrentConversationToNext(requester: ConversationChangeRequester): Future[Unit] =
-    currentConvId.head.map { id => convStore.nextConversation(id) }.map { convId =>
-      selectConv(convId, requester)
-    }
+    currentConvId.head
+      .map { id => convStore.nextConversation(id) }
+      .map { convId =>selectConv(convId, requester) }
 
   def archive(convId: ConvId, archive: Boolean): Unit = {
     zms.head.map { _.convsUi.setConversationArchived(convId, archive) }
@@ -203,10 +187,9 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def iConv(id: ConvId): IConversation = convStore.getConversation(id.str)
   def iCurrentConv: IConversation = currentConvId.currentValue.map(iConv).orNull
 
-  def withCurrentConv(callback: Callback[ConversationData]): Unit =
-    currentConv.collect { case Some(c) => c }.head.foreach( callback.callback )
+  def withCurrentConv(callback: Callback[ConversationData]): Unit = currentConv.head.foreach( callback.callback )
   def withCurrentConvName(callback: Callback[String]): Unit = currentConvName.head.foreach(callback.callback)
-  def withCurrentConvType(callback: Callback[IConversation.Type]): Unit = currentConvType.collect { case Some(t) => t }.head.foreach(callback.callback)
+  def withCurrentConvType(callback: Callback[IConversation.Type]): Unit = currentConvType.head.foreach(callback.callback)
 
   def getCurrentConvId: ConvId = currentConvId.currentValue.orNull
   def onConvChanged(callback: Callback[ConversationChange]): Unit =  convChanged.onUi { callback.callback }
@@ -278,7 +261,7 @@ object ConversationController {
   val ARCHIVE_DELAY = 500.millis
 
   case class ConversationChange(from: Option[ConvId], to: Option[ConvId], requester: ConversationChangeRequester) {
-    def toConvId(): ConvId = to.orNull // TODO: remove when not used anymore
+    def toConvId: ConvId = to.orNull // TODO: remove when not used anymore
     lazy val noChange: Boolean = from == to
   }
 

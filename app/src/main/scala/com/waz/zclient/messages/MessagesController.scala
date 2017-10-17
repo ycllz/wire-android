@@ -24,7 +24,7 @@ import com.waz.service.ZMessaging
 import com.waz.utils.events.{EventContext, EventStream, Signal}
 import com.waz.zclient.controllers.navigation._
 import com.waz.zclient.pages.main.conversationpager.controller.{ISlidingPaneController, SlidingPaneObserver}
-import com.waz.zclient.utils.ViewUtils
+import com.waz.zclient.utils.ContextUtils
 import com.waz.zclient.{Injectable, Injector}
 import org.threeten.bp.Instant
 import com.waz.ZLog.ImplicitTag._
@@ -35,7 +35,7 @@ class MessagesController()(implicit injector: Injector, ev: EventContext) extend
   import com.waz.threading.Threading.Implicits.Background
 
   val zms = inject[Signal[ZMessaging]]
-  val context = inject[Context]
+  implicit val context = inject[Context]
   val currentConvId = inject[ConversationController].currentConvId
   val navigationController = inject[INavigationController]
   val slidingPaneController = inject[ISlidingPaneController]
@@ -65,7 +65,7 @@ class MessagesController()(implicit injector: Injector, ev: EventContext) extend
     // XXX: This is a bit fragile. We are deducing signal state from loosely related events, and we rely on their order.
     navigationController.addNavigationControllerObserver(new NavigationControllerObserver {
       override def onPageVisible(page: Page) =
-        pageVisible ! (page == Page.MESSAGE_STREAM || ViewUtils.isInLandscape(context.getResources.getConfiguration))
+        pageVisible ! (page == Page.MESSAGE_STREAM || ContextUtils.isInLandscape)
     })
 
     slidingPaneController.addObserver(new SlidingPaneObserver {

@@ -57,7 +57,7 @@ import com.waz.zclient.preferences.{PreferencesActivity, PreferencesController}
 import com.waz.zclient.tracking.{CrashController, GlobalTrackingController, UiTrackingController}
 import com.waz.zclient.utils.PhoneUtils.PhoneState
 import com.waz.zclient.utils.StringUtils.TextDrawing
-import com.waz.zclient.utils.{BuildConfigUtils, Emojis, IntentUtils, LayoutSpec, PhoneUtils, ViewUtils}
+import com.waz.zclient.utils.{BuildConfigUtils, ContextUtils, Emojis, IntentUtils, LayoutSpec, PhoneUtils, ViewUtils}
 import net.hockeyapp.android.{ExceptionHandler, NativeCrashManager}
 
 import scala.collection.JavaConverters._
@@ -263,7 +263,7 @@ class MainActivity extends BaseActivity
     // Make sure we have a running OrientationController instance
     getControllerFactory.getOrientationController
     // Here comes code for adding other dependencies to controllers...
-    getControllerFactory.getNavigationController.setIsLandscape(ViewUtils.isInLandscape(this))
+    getControllerFactory.getNavigationController.setIsLandscape(ContextUtils.isInLandscape(this))
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////

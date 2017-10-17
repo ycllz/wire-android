@@ -45,6 +45,7 @@ import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.views.ZetaButton;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.views.images.ImageAssetImageView;
 import com.waz.zclient.views.menus.FooterMenu;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -91,8 +92,8 @@ public class SendConnectRequestFragment extends BaseFragment<SendConnectRequestF
 
         if (getControllerFactory().getConversationScreenController().getPopoverLaunchMode() != DialogLaunchMode.AVATAR &&
             getControllerFactory().getConversationScreenController().getPopoverLaunchMode() != DialogLaunchMode.COMMON_USER) {
-            int centerX = ViewUtils.getOrientationIndependentDisplayWidth(getActivity()) / 2;
-            int centerY = ViewUtils.getOrientationIndependentDisplayHeight(getActivity()) / 2;
+            int centerX = ContextUtils.getOrientationIndependentDisplayWidth(getActivity()) / 2;
+            int centerY = ContextUtils.getOrientationIndependentDisplayHeight(getActivity()) / 2;
             int duration;
             int delay = 0;
 

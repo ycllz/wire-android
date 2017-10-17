@@ -55,6 +55,7 @@ import com.waz.zclient.ui.utils.ResourceUtils;
 import com.waz.zclient.ui.views.ZetaButton;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.ProgressView;
+import com.waz.zclient.utils.ContextUtils;
 
 public class SignUpPhotoFragment extends BaseFragment<SignUpPhotoFragment.Container> implements CameraFragment.Container,
                                                                                                 CameraActionObserver,
@@ -146,7 +147,7 @@ public class SignUpPhotoFragment extends BaseFragment<SignUpPhotoFragment.Contai
             initImage.setVisibility(View.GONE);
         }
 
-        final int displayWidth = ViewUtils.getOrientationDependentDisplayWidth(getActivity());
+        final int displayWidth = ContextUtils.getOrientationDependentDisplayWidth(getActivity());
         if (unsplashImageLoadHandle != null) {
             unsplashImageLoadHandle.cancel();
             unsplashImageLoadHandle = null;

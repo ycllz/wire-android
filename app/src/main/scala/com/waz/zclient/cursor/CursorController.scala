@@ -45,7 +45,6 @@ import com.waz.zclient.pages.main.profile.camera.CameraContext
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.LayoutSpec
 import com.waz.zclient.ui.cursor.{CursorMenuItem => JCursorMenuItem}
-import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
 import com.waz.zclient.conversation.ConversationController
 
@@ -57,7 +56,7 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
 
   val zms = inject[Signal[ZMessaging]]
   val conversationController = inject[ConversationController]
-  val conv = conversationController.currentConv.collect { case Some(conv) => conv }
+  val conv = conversationController.currentConv
 
   val keyboard = Signal[KeyboardState](KeyboardState.Hidden)
   val editingMsg = Signal(Option.empty[MessageData])

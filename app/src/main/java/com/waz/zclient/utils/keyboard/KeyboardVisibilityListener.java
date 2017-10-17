@@ -20,7 +20,7 @@ package com.waz.zclient.utils.keyboard;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.view.View;
-import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.utils.ContextUtils;
 
 public class KeyboardVisibilityListener {
     private final View contentView;
@@ -50,7 +50,7 @@ public class KeyboardVisibilityListener {
             this.statusAndNavigationBarHeight = 0;
             return;
         }
-        this.statusAndNavigationBarHeight = ViewUtils.getNavigationBarHeight(contentView.getContext()) + ViewUtils.getStatusBarHeight(contentView.getContext());
+        this.statusAndNavigationBarHeight = ContextUtils.getNavigationBarHeight(contentView.getContext()) + ContextUtils.getStatusBarHeight(contentView.getContext());
     }
 
     public void setCallback(Callback keyboardCallback) {

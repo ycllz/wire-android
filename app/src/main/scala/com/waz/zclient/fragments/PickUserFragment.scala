@@ -35,7 +35,6 @@ import android.widget._
 import com.waz.ZLog
 import com.waz.api._
 import com.waz.content.UserPreferences
-import com.waz.model.ConversationData.ConversationType
 import com.waz.model.UserData.ConnectionStatus
 import com.waz.model._
 import com.waz.service.{SearchState, ZMessaging}
@@ -61,13 +60,15 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.device.DeviceDetector
-import com.waz.zclient.utils.{IntentUtils, LayoutSpec, PermissionUtils, StringUtils, UiStorage, UserSignal, ViewUtils}
+import com.waz.zclient.utils.{IntentUtils, LayoutSpec, PermissionUtils, StringUtils, UiStorage, UserSignal}
+import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.views._
 import com.waz.zclient.views.pickuser.{ContactRowView, SearchBoxView, UserRowView}
 import com.waz.zclient.{BaseActivity, FragmentHelper, OnBackPressedListener, R}
+import com.waz.zclient.utils.ViewUtils
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent. Future
 
 object PickUserFragment {
   val TAG: String = classOf[PickUserFragment].getName
@@ -191,7 +192,7 @@ class PickUserFragment extends BaseFragment[PickUserFragment.Container]
       return super.onCreateAnimation(transit, enter, nextAnim)
     }
     if (getControllerFactory.getPickUserController.isHideWithoutAnimations) {
-      return new DefaultPageTransitionAnimation(0, ViewUtils.getOrientationIndependentDisplayHeight(getActivity), enter, 0, 0, 1f)
+      return new DefaultPageTransitionAnimation(0, getOrientationIndependentDisplayHeight(getActivity), enter, 0, 0, 1f)
     }
     if (enter) {
       // Fade animation in participants dialog on tablet
@@ -759,7 +760,7 @@ class PickUserFragment extends BaseFragment[PickUserFragment.Container]
 
   private def setFocusByCurrentPickerDestination(): Unit = {
     // Don't trigger setting focus in closed split mode on tablet portrait, search is not visible then
-    if (LayoutSpec.isTablet(getActivity) && ViewUtils.isInPortrait(getActivity) && getControllerFactory.getNavigationController.getPagerPosition == NavigationController.SECOND_PAGE) {
+    if (LayoutSpec.isTablet(getActivity) && isInPortrait(getActivity) && getControllerFactory.getNavigationController.getPagerPosition == NavigationController.SECOND_PAGE) {
       return
     }
     if ((getCurrentPickerDestination eq IPickUserController.Destination.CONVERSATION_LIST) && (LayoutSpec.isTablet(getActivity) || getControllerFactory.getNavigationController.getPagerPosition == NavigationController.FIRST_PAGE)) {

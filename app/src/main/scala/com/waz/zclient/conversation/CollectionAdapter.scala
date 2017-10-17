@@ -49,7 +49,7 @@ class CollectionAdapter(viewDim: Signal[Dim2])(implicit context: Context, inject
   private implicit val tag: LogTag = logTagFor[CollectionAdapter]
 
   private val zms = inject[Signal[ZMessaging]]
-  private val conv = inject[ConversationController].currentConv
+  private val convController = inject[ConversationController]
   private val collectionController = inject[CollectionController]
 
   val contentMode = Signal[ContentType](AllContent)
@@ -58,9 +58,9 @@ class CollectionAdapter(viewDim: Signal[Dim2])(implicit context: Context, inject
 
   val adapterState = Signal[AdapterState](AdapterState(contentMode.currentValue.get, 0, loading = true))
 
-  Signal(conv, adapterState).on(Threading.Ui){
-    case (Some(c), AdapterState(AllContent, 0, false)) => collectionController.openedCollection ! Some(CollectionInfo(c, empty = true))
-    case (Some(c), AdapterState(AllContent, count, false)) => collectionController.openedCollection ! Some(CollectionInfo(c, empty = false))
+  Signal(convController.currentConv, adapterState).on(Threading.Ui){
+    case (c, AdapterState(AllContent, 0, false)) => collectionController.openedCollection ! Some(CollectionInfo(c, empty = true))
+    case (c, AdapterState(AllContent, count, false)) => collectionController.openedCollection ! Some(CollectionInfo(c, empty = false))
     case _ =>
   }
 
@@ -74,8 +74,8 @@ class CollectionAdapter(viewDim: Signal[Dim2])(implicit context: Context, inject
     val notifier = new CollectionRecyclerNotifier(contentType, adapter)
     val cursor = for {
       zs <- zms
-      Some(c) <- conv
-      rc <- Signal(new RecyclerCursor(c.id, zs, notifier, Some(MessageFilter(Some(contentType.typeFilter)))))
+      cId <- convController.currentConvId
+      rc <- Signal(new RecyclerCursor(cId, zs, notifier, Some(MessageFilter(Some(contentType.typeFilter)))))
       _ <- rc.countSignal
     } yield rc
 

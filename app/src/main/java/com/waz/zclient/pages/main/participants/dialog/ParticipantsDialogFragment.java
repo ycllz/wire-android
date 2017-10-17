@@ -74,6 +74,7 @@ import com.waz.zclient.ui.animation.interpolators.penner.Quart;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.MathUtils;
 import com.waz.zclient.utils.Callback;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.LoadingIndicatorView;
 import com.waz.zclient.views.menus.ConfirmationMenu;
@@ -195,7 +196,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
                                    int dialogWidth,
                                    int dialogHeight) {
         if (getControllerFactory().getConversationScreenController().getPopoverLaunchMode() == DialogLaunchMode.CONVERSATION_TOOLBAR) {
-            int screenWidth = ViewUtils.getRealDisplayWidth(getActivity());
+            int screenWidth = ContextUtils.getRealDisplayWidth(getActivity());
             dialogTranslationX = screenWidth / 2 - dialogWidth / 2;
             marker.setVisibility(View.INVISIBLE);
         } else {
@@ -214,15 +215,15 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
         boolean forceRight = getControllerFactory().getConversationScreenController().getPopoverLaunchMode() == DialogLaunchMode.SEARCH ||
                              getControllerFactory().getConversationScreenController().getPopoverLaunchMode() == DialogLaunchMode.CONVERSATION_MENU;
 
-        if (ViewUtils.isInPortrait(getActivity())) {
-            displayHeight = ViewUtils.getOrientationIndependentDisplayHeight(getActivity());
-            displayWidth = ViewUtils.getOrientationIndependentDisplayWidth(getActivity());
+        if (ContextUtils.isInPortrait(getActivity())) {
+            displayHeight = ContextUtils.getOrientationIndependentDisplayHeight(getActivity());
+            displayWidth = ContextUtils.getOrientationIndependentDisplayWidth(getActivity());
         } else {
-            displayHeight = ViewUtils.getOrientationIndependentDisplayWidth(getActivity());
-            displayWidth = ViewUtils.getOrientationIndependentDisplayHeight(getActivity());
+            displayHeight = ContextUtils.getOrientationIndependentDisplayWidth(getActivity());
+            displayWidth = ContextUtils.getOrientationIndependentDisplayHeight(getActivity());
         }
 
-        final int screenBottom = displayHeight - participantDialogPadding - ViewUtils.getStatusBarHeight(getActivity());
+        final int screenBottom = displayHeight - participantDialogPadding - ContextUtils.getStatusBarHeight(getActivity());
         final int screenRight = displayWidth - participantDialogPadding;
         final int screenLeft = participantDialogPadding;
 
@@ -271,7 +272,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
                 dialogTranslationY = participantDialogPadding;
             } else if (posY + dialogHeight > screenBottom) {
                 // too low
-                dialogTranslationY = displayHeight - participantDialogPadding - dialogHeight - ViewUtils.getStatusBarHeight(getActivity());
+                dialogTranslationY = displayHeight - participantDialogPadding - dialogHeight - ContextUtils.getStatusBarHeight(getActivity());
             }
 
             // too far right
@@ -299,7 +300,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
                 dialogTranslationY = participantDialogPadding;
             } else if (posY + dialogHeight > screenBottom) {
                 // too low
-                dialogTranslationY = displayHeight - participantDialogPadding - dialogHeight - ViewUtils.getStatusBarHeight(getActivity());
+                dialogTranslationY = displayHeight - participantDialogPadding - dialogHeight - ContextUtils.getStatusBarHeight(getActivity());
             }
 
             // too far left
@@ -785,7 +786,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
         switch (getControllerFactory().getConversationScreenController().getPopoverLaunchMode()) {
             case CONVERSATION_MENU:
             case PARTICIPANT_BUTTON:
-                int minDialogHeight = ViewUtils.getOrientationDependentDisplayHeight(getActivity())
+                int minDialogHeight = ContextUtils.getOrientationDependentDisplayHeight(getActivity())
                                       - keyboardHeight
                                       - marker.getMeasuredHeight()
                                       - participantDialogPadding;
@@ -804,7 +805,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
                                      isParticipantsDialogMinimized();
         final boolean shouldCollapse = keyboardIsVisible &&
                                        !isParticipantsDialogMinimized() &&
-                                       ViewUtils.isInLandscape(getActivity());
+            ContextUtils.isInLandscape(getActivity());
         final ValueAnimator sizeAnimator;
         if (shouldExpand) {
             sizeAnimator = ValueAnimator.ofObject(new HeightEvaluator(dialogFrameLayout),
@@ -825,7 +826,7 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
 
         // Update vertical position
         if (keyboardIsVisible && !isParticipantsDialogShiftedUp()) {
-            final int navigationBarHeight = ViewUtils.getNavigationBarHeight(getActivity());
+            final int navigationBarHeight = ContextUtils.getNavigationBarHeight(getActivity());
             int dialogDY;
             int markerDY;
             if (selfGravity == Gravity.TOP) {
