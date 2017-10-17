@@ -46,7 +46,6 @@ import com.waz.zclient.controllers.global.AccentColorController
 import com.waz.zclient.controllers.navigation.{NavigationControllerObserver, Page}
 import com.waz.zclient.controllers.{SharingController, UserAccountsController}
 import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.core.controllers.tracking.events.media.OpenedMediaActionEvent
 import com.waz.zclient.core.stores.api.ZMessagingApiStoreObserver
 import com.waz.zclient.core.stores.connect.{ConnectStoreObserver, IConnectStore}
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester

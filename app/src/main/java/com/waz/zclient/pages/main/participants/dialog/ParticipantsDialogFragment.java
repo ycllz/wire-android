@@ -42,13 +42,9 @@ import com.waz.api.Message;
 import com.waz.api.OtrClient;
 import com.waz.api.User;
 import com.waz.api.UsersList;
-<<<<<<< HEAD
-=======
 import com.waz.model.ConvId;
 import com.waz.model.ConversationData;
-import com.waz.model.UserData;
 import com.waz.model.UserId;
->>>>>>> rewrites ConversationFragment in Scala and removes IConversation from most use cases
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -56,12 +52,7 @@ import com.waz.zclient.controllers.confirmation.ConfirmationObserver;
 import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.globallayout.KeyboardHeightObserver;
-<<<<<<< HEAD
-=======
-import com.waz.zclient.controllers.tracking.events.group.AddedMemberToGroupEvent;
-import com.waz.zclient.controllers.tracking.events.group.CreatedGroupConversationEvent;
 import com.waz.zclient.conversation.ConversationController;
->>>>>>> rewrites ConversationFragment in Scala and removes IConversation from most use cases
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
 import com.waz.zclient.core.stores.participants.ParticipantsStoreObserver;

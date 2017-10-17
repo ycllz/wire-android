@@ -18,14 +18,12 @@
 package com.waz.zclient.pages.main.participants
 
 import android.content.Context
-import com.waz.model.{ConvId, ConversationData, UserId}
+import com.waz.model.{ConvId, ConversationData}
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.{Injectable, Injector}
 import com.waz.zclient.utils.Callback
-import com.waz.ZLog._
-import com.waz.ZLog.ImplicitTag._
 
 class OptionsMenuController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
   import Threading.Implicits.Ui

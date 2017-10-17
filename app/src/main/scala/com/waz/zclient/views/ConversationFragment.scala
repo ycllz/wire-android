@@ -38,7 +38,6 @@ import com.waz.model.{AssetId, ConvId, ConversationData, MessageData}
 import com.waz.model.ConversationData.ConversationType
 import com.waz.threading.{CancellableFuture, Threading}
 import com.waz.utils.events.Signal
-import com.waz.utils.returning
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.Intents.ShowDevicesIntent
 import com.waz.zclient.camera.controllers.GlobalCameraController
@@ -55,7 +54,6 @@ import com.waz.zclient.controllers.permission.RequestPermissionsObserver
 import com.waz.zclient.controllers.singleimage.SingleImageObserver
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.conversation.{CollectionController, ConversationController, TypingIndicatorView}
-import com.waz.zclient.core.controllers.tracking.events.media._
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.core.stores.inappnotification.SyncErrorObserver
 import com.waz.zclient.cursor.{CursorCallback, CursorView}
@@ -76,7 +74,7 @@ import com.waz.zclient.ui.animation.interpolators.penner.Expo
 import com.waz.zclient.ui.audiomessage.AudioMessageRecordingView
 import com.waz.zclient.ui.cursor.CursorMenuItem
 import com.waz.zclient.ui.utils.KeyboardUtils
-import com.waz.zclient.utils.{AssetUtils, LayoutSpec, PermissionUtils, SquareOrientation, TrackingUtils, ViewUtils}
+import com.waz.zclient.utils.{LayoutSpec, PermissionUtils, SquareOrientation, ViewUtils}
 import com.waz.zclient.views.e2ee.ShieldView
 
 import scala.concurrent.duration._
@@ -410,20 +408,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
         convController.sendMessage(conv.id, a)
         extendedCursorContainer.close(true)
         onCancelPreview()
-
-        globalTrackingController.tagEvent(new SentPictureEvent(
-          if (source == ImagePreviewLayout.Source.CAMERA) SentPictureEvent.Source.CAMERA else SentPictureEvent.Source.GALLERY,
-          conv.convType.name(),
-          source match {
-            case ImagePreviewLayout.Source.IN_APP_GALLERY => SentPictureEvent.Method.KEYBOARD
-            case ImagePreviewLayout.Source.DEVICE_GALLERY => SentPictureEvent.Method.FULL_SCREEN
-            case _                                        => SentPictureEvent.Method.DEFAULT
-          },
-          SentPictureEvent.SketchSource.NONE,
-          false,
-          conv.ephemeral != EphemeralExpiration.NONE,
-          String.valueOf(conv.ephemeral.duration.toSeconds))
-        )
       }
       case _ =>
     }
@@ -436,26 +420,17 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private lazy val audioMessageRecordingCallback = new AudioMessageRecordingView.Callback {
 
-    override def onPreviewedAudioMessage(): Unit = convController.withCurrentConv { conv =>
-      globalTrackingController.tagEvent(new PreviewedAudioMessageEvent(conv.convType.name()))
-    }
-
+    override def onPreviewedAudioMessage(): Unit = {}
     override def onSendAudioMessage(audioAssetForUpload: AudioAssetForUpload, appliedAudioEffect: AudioEffect, sentWithQuickAction: Boolean): Unit = audioAssetForUpload match {
       case a: com.waz.api.impl.AudioAssetForUpload =>
         convController.currentConvId.head.map { convId =>
           convController.sendMessage(convId, a, errorHandler)
           hideAudioMessageRecording()
-          convController.loadConv(convId).collect { case Some(conv) =>
-            TrackingUtils.tagSentAudioMessageEvent(globalTrackingController, audioAssetForUpload, appliedAudioEffect, true, sentWithQuickAction, conv)
-          }
         }
       case _ =>
     }
 
-    override def onCancelledAudioMessageRecording(): Unit = convController.withCurrentConv { conv =>
-      hideAudioMessageRecording()
-      globalTrackingController.tagEvent(new CancelledRecordingAudioMessageEvent(conv.name.getOrElse("")))
-    }
+    override def onCancelledAudioMessageRecording(): Unit = hideAudioMessageRecording()
 
     override def onStartedRecordingAudioMessage(): Unit = getControllerFactory.getGlobalLayoutController.keepScreenAwake()
   }
@@ -521,19 +496,10 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
         showImagePreview(ImageAssetFactory.getImageAsset(uri), ImagePreviewLayout.Source.DEVICE_GALLERY)
       case AssetIntentsManager.IntentType.VIDEO_CURSOR_BUTTON =>
         sendVideo(uri)
-        convController.withCurrentConv { conv =>
-          globalTrackingController.tagEvent(new SentVideoMessageEvent((AssetUtils.getVideoAssetDurationMilliSec(getContext, uri) / 1000).toInt, conv, SentVideoMessageEvent.Source.CURSOR_BUTTON))
-        }
       case AssetIntentsManager.IntentType.VIDEO =>
         sendVideo(uri)
-        convController.withCurrentConv { conv =>
-          globalTrackingController.tagEvent(new SentVideoMessageEvent((AssetUtils.getVideoAssetDurationMilliSec(getContext, uri) / 1000).toInt, conv, SentVideoMessageEvent.Source.KEYBOARD))
-        }
       case AssetIntentsManager.IntentType.CAMERA =>
         sendImage(uri)
-        convController.withCurrentConv { conv =>
-          TrackingUtils.onSentPhotoMessage(globalTrackingController, conv, SentPictureEvent.Source.CAMERA, SentPictureEvent.Method.FULL_SCREEN)
-        }
         extendedCursorContainer.close(true)
     }
 
@@ -617,14 +583,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
         extendedCursorContainer.openVoiceFilter(voiceFilterLayoutCallback)
-        convController.withCurrentConv { conv =>
-          globalTrackingController.tagEvent(OpenedMediaActionEvent.cursorAction(OpenedMediaAction.AUDIO_MESSAGE, conv, false))
-        }
       case ExtendedCursorContainer.Type.IMAGES =>
         extendedCursorContainer.openCursorImages(cursorImageLayoutCallback)
-        convController.withCurrentConv { conv =>
-          globalTrackingController.tagEvent(OpenedMediaActionEvent.cursorAction(OpenedMediaAction.PHOTO, conv, false))
-        }
       case _ =>
         verbose(s"openExtendedCursor(unknown)")
     }
@@ -647,9 +607,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private val voiceFilterLayoutCallback = new VoiceFilterLayout.Callback {
     override def onAudioMessageRecordingStarted(): Unit = {
       getControllerFactory.getGlobalLayoutController.keepScreenAwake()
-      convController.withCurrentConv { conv =>
-        globalTrackingController.tagEvent(new StartedRecordingAudioMessageEvent(conv.convType.name(), false))
-      }
     }
 
     override def onCancel(): Unit = extendedCursorContainer.close(false)
@@ -661,10 +618,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       }
 
       hideAudioMessageRecording()
-
-      convController.withCurrentConv { conv =>
-        TrackingUtils.tagSentAudioMessageEvent(globalTrackingController, audioAssetForUpload, appliedAudioEffect, false, false, conv)
-      }
       extendedCursorContainer.close(true)
     }
   }
