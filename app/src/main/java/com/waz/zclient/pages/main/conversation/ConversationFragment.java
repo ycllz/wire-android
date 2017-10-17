@@ -1009,7 +1009,7 @@ public class ConversationFragment extends BaseFragment<ConversationFragment.Cont
                             getControllerFactory().getGlobalLayoutController().getSoftInputModeForPage(Page.MESSAGE_STREAM)
                                      :
                             getControllerFactory().getGlobalLayoutController().getSoftInputModeForPage(Page.PICK_USER);
-        ViewUtils.setSoftInputMode(getActivity().getWindow(), softInputMode, TAG);
+        ViewUtils.setSoftInputMode(getActivity().getWindow(), softInputMode);
     }
 
     @Override

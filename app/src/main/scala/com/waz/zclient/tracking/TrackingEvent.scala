@@ -17,7 +17,7 @@
  */
 package com.waz.zclient.tracking
 
-import java.lang.Math.{abs, max}
+import java.lang.Math.max
 
 import com.waz.api.EphemeralExpiration
 import com.waz.api.Invitations.PersonalToken

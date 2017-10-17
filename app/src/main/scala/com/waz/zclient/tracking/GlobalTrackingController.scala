@@ -38,7 +38,6 @@ import com.waz.utils.RichThreetenBPDuration
 import scala.concurrent.Future._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.{implicitConversions, postfixOps}
 
 class GlobalTrackingController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
   import GlobalTrackingController._

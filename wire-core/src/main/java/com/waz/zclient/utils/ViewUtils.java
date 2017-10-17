@@ -27,7 +27,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
@@ -47,8 +46,6 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import java.lang.reflect.Field;
-
-import static android.R.attr.width;
 
 public class ViewUtils {
 
@@ -92,7 +89,7 @@ public class ViewUtils {
         }
     }
 
-    public static void setSoftInputMode(Window window, int softInputMode, String sender) {
+    public static void setSoftInputMode(Window window, int softInputMode) {
         window.setSoftInputMode(softInputMode);
     }
 
@@ -121,14 +118,6 @@ public class ViewUtils {
             result = context.getResources().getDimensionPixelSize(resourceId);
         }
         return result;
-    }
-
-    public static Rect getOrientationDependentDisplayBounds(Context context) {
-        return new Rect(
-            0, 0,
-            getOrientationDependentDisplayWidth(context),
-            getOrientationDependentDisplayHeight(context)
-        );
     }
 
     /**
@@ -196,32 +185,12 @@ public class ViewUtils {
         return (int) (dp * scale + 0.5f);
     }
 
-    public static void setPaddingStart(View view, int startPadding) {
-        view.setPaddingRelative(startPadding, view.getPaddingTop(), view.getPaddingEnd(), view.getPaddingBottom());
-    }
-
-    public static void setPaddingEnd(View view, int endPadding) {
-        view.setPaddingRelative(view.getPaddingStart(), view.getPaddingTop(), endPadding, view.getPaddingBottom());
-    }
-
-    public static void setPaddingLeft(View view, int leftPadding) {
-        view.setPadding(leftPadding, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
-    }
-
     public static void setPaddingTop(View view, int topPadding) {
         view.setPadding(view.getPaddingLeft(), topPadding, view.getPaddingRight(), view.getPaddingBottom());
     }
 
-    public static void setPaddingRight(View view, int rightPadding) {
-        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), rightPadding, view.getPaddingBottom());
-    }
-
     public static void setPaddingBottom(View view, int bottomPadding) {
         view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), bottomPadding);
-    }
-
-    public static void setPaddingLeftRight(View view, int padding) {
-        view.setPadding(padding, view.getPaddingTop(), padding, view.getPaddingBottom());
     }
 
     public static Point getLocationOnScreen(View view) {
@@ -329,18 +298,8 @@ public class ViewUtils {
         ((ViewGroup.MarginLayoutParams) v.getLayoutParams()).topMargin = topMargin;
         v.invalidate();
     }
-    public static void setMarginBottom(View v, int bottomMargin) {
-        ((ViewGroup.MarginLayoutParams) v.getLayoutParams()).bottomMargin = bottomMargin;
-        v.invalidate();
-    }
-
     public static void setMarginLeft(View v, int leftMargin) {
         ((ViewGroup.MarginLayoutParams) v.getLayoutParams()).leftMargin = leftMargin;
-        v.invalidate();
-    }
-
-    public static void setMarginRight(View v, int rightMargin) {
-        ((ViewGroup.MarginLayoutParams) v.getLayoutParams()).rightMargin = rightMargin;
         v.invalidate();
     }
 
@@ -443,10 +402,6 @@ public class ViewUtils {
     @SuppressLint("com.waz.ViewUtils")
     public static <T extends View> T getView(@NonNull Activity activity, @IdRes int resId) {
         return  (T) activity.findViewById(resId);
-    }
-
-    public static int getAlphaValue(int opacity) {
-        return (int) (255.00 * ((double) opacity / 100.00));
     }
 
     public static long getNextAnimationDuration(Fragment fragment) {
