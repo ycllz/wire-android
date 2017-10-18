@@ -41,7 +41,6 @@ import com.waz.api.User;
 import com.waz.api.UsersList;
 import com.waz.api.Verification;
 import com.waz.model.ConvId;
-import com.waz.model.ConversationData;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.common.views.UserDetailsView;

@@ -37,8 +37,6 @@ import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.User;
 import com.waz.model.ConvId;
-import com.waz.model.ConversationData;
-import com.waz.model.UserData;
 import com.waz.model.UserId;
 import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
@@ -86,10 +84,8 @@ import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.LoadingIndicatorView;
 import com.waz.zclient.views.menus.ConfirmationMenu;
-import timber.log.Timber;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class ConversationListManagerFragment extends BaseFragment<ConversationListManagerFragment.Container> implements
@@ -380,7 +376,9 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
             }
         } else {
             List<UserId> userIds = new ArrayList<>(users.size());
-            for(User user: users) userIds.add(new UserId(user.getId()));
+            for(User user: users) {
+                userIds.add(new UserId(user.getId()));
+            }
             inject(ConversationController.class).createGroupConversation(userIds, requester);
         }
     }

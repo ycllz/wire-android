@@ -514,6 +514,10 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                 }
 
                 convController.archive(convId, archive);
+                if (archive) {
+                    getControllerFactory().getNavigationController().setVisiblePage(Page.CONVERSATION_LIST, TAG);
+                    getControllerFactory().getConversationScreenController().hideParticipants(false, true);
+                }
             }
         }, getResources().getInteger(R.integer.framework_animation_duration_medium));
     }

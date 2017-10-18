@@ -80,7 +80,6 @@ import com.waz.zclient.views.LoadingIndicatorView;
 import com.waz.zclient.views.menus.ConfirmationMenu;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogFragment.Container> implements

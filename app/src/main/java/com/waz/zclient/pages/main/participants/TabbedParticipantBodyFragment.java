@@ -55,7 +55,6 @@ import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.ParticipantDetailsTab;
 import com.waz.zclient.views.menus.FooterMenuCallback;
-import timber.log.Timber;
 
 public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipantBodyFragment.Container> implements
                                                                                                ParticipantsStoreObserver,
