@@ -59,10 +59,10 @@ import com.waz.zclient.ui.text.TypefaceTextView
 import com.waz.zclient.ui.theme.ThemeUtils
 import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.device.DeviceDetector
-import com.waz.zclient.utils.{IntentUtils, LayoutSpec, PermissionUtils, StringUtils, UiStorage, UserSignal, ViewUtils}
+import com.waz.zclient.utils.{LayoutSpec, PermissionUtils, StringUtils, UiStorage, UserSignal, ViewUtils}
 import com.waz.zclient.views._
 import com.waz.zclient.views.pickuser.{ContactRowView, SearchBoxView, UserRowView}
-import com.waz.zclient.{BaseActivity, FragmentHelper, OnBackPressedListener, R}
+import com.waz.zclient.{BaseActivity, FragmentHelper, Intents, OnBackPressedListener, R}
 
 import scala.collection.JavaConverters._
 
@@ -683,7 +683,10 @@ class PickUserFragment extends BaseFragment[PickUserFragment.Container]
     self.head.map { self =>
       val name: String = self.getDisplayName
       val username: String = self.handle.map(_.string).getOrElse("")
-      val sharingIntent = IntentUtils.getInviteIntent(getString(R.string.people_picker__invite__share_text__header, name), getString(R.string.people_picker__invite__share_text__body, StringUtils.formatHandle(username)))
+      val sharingIntent =
+        Intents.InviteIntent(getString(R.string.people_picker__invite__share_text__header, name),
+          getString(R.string.people_picker__invite__share_text__body,
+            StringUtils.formatHandle(username)))
       startActivity(Intent.createChooser(sharingIntent, getString(R.string.people_picker__invite__share_details_dialog)))
     }(Threading.Ui)
 
