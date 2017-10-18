@@ -55,6 +55,7 @@ import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.ParticipantDetailsTab;
 import com.waz.zclient.views.menus.FooterMenuCallback;
+import timber.log.Timber;
 
 public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipantBodyFragment.Container> implements
                                                                                                ParticipantsStoreObserver,
@@ -207,7 +208,6 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
 
     @Override
     public void finishUpdate() {
-        userModelObserverForTabs.forceUpdate();
     }
 
     @Override
@@ -243,6 +243,7 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
             inject(ConversationController.class).withCurrentConvType(new Callback<IConversation.Type>() {
                 @Override
                 public void callback(IConversation.Type convType) {
+
                     if (convType == IConversation.Type.ONE_TO_ONE && permissionToCreate) {
                         tab.updateFooterMenu(R.string.glyph__add_people,
                             R.string.conversation__action__create_group,

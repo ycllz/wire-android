@@ -601,8 +601,12 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
             return;
         }
 
-        if (conversation != null) updateGroupDialogBackground(new ConvId(conversation.getId()));
-        else updateGroupDialogBackground(null);
+        if (conversation != null) {
+            updateGroupDialogBackground(new ConvId(conversation.getId()));
+        }
+        else {
+            updateGroupDialogBackground(null);
+        }
     }
 
     @Override
@@ -1045,7 +1049,9 @@ public class ParticipantsDialogFragment extends BaseFragment<ParticipantsDialogF
         final ConversationController ctrl = inject(ConversationController.class);
 
         final List<UserId> userIds = new ArrayList<>(users.size());
-        for (User user: users) userIds.add(new UserId(user.getId()));
+        for (User user: users) {
+            userIds.add(new UserId(user.getId()));
+        }
 
         ctrl.withCurrentConv(new Callback<ConversationData>() {
             @Override

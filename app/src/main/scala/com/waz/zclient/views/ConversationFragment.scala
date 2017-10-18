@@ -54,7 +54,7 @@ import com.waz.zclient.controllers.orientation.OrientationControllerObserver
 import com.waz.zclient.controllers.permission.RequestPermissionsObserver
 import com.waz.zclient.controllers.singleimage.SingleImageObserver
 import com.waz.zclient.conversation.ConversationController.ConversationChange
-import com.waz.zclient.conversation.{CollectionController, ConversationController, TypingIndicatorView}
+import com.waz.zclient.conversation.{CollectionController, ConversationController}
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.core.stores.inappnotification.SyncErrorObserver
 import com.waz.zclient.cursor.{CursorCallback, CursorView}
@@ -70,7 +70,6 @@ import com.waz.zclient.pages.main.conversationlist.ConversationListAnimation
 import com.waz.zclient.pages.main.conversationpager.controller.SlidingPaneObserver
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController
 import com.waz.zclient.pages.main.profile.camera.CameraContext
-import com.waz.zclient.tracking.GlobalTrackingController
 import com.waz.zclient.ui.animation.interpolators.penner.Expo
 import com.waz.zclient.ui.audiomessage.AudioMessageRecordingView
 import com.waz.zclient.ui.cursor.CursorMenuItem
@@ -90,7 +89,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
   private lazy val convController = inject[ConversationController]
   private lazy val collectionController = inject[CollectionController]
-  private lazy val globalTrackingController = inject[GlobalTrackingController]
 
   private lazy val previewShown = Signal(false)
 

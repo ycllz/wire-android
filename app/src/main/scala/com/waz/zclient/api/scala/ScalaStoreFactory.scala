@@ -42,7 +42,5 @@ class ScalaStoreFactory(context: Context) extends StoreFactory {
 
   def createConnectStore = new ScalaConnectStore(context, zMessagingApiStore.getApi)
 
-  protected def createDraftStore = new ScalaDraftStore
-
   override def tearDown() = super.tearDown()
 }

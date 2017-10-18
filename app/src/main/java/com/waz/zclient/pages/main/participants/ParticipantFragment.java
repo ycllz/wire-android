@@ -226,7 +226,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                     ParticipantHeaderFragment.TAG)
                 .commit();
 
-            if (getStoreFactory() != null && !getStoreFactory().isTornDown())
+            if (getStoreFactory() != null && !getStoreFactory().isTornDown()) {
                 convController.withCurrentConvType(new Callback<IConversation.Type>() {
                     @Override
                     public void callback(IConversation.Type convType) {
@@ -246,6 +246,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                         }
                     }
                 });
+            }
 
             getChildFragmentManager().beginTransaction()
                 .replace(R.id.fl__participant__settings_box,
@@ -982,7 +983,9 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
     @Override
     public void onSelectedUsers(final List<User> users, final ConversationChangeRequester requester) {
         final List<UserId> userIds = new ArrayList<>(users.size());
-        for(User user: users) userIds.add(new UserId(user.getId()));
+        for(User user: users) {
+            userIds.add(new UserId(user.getId()));
+        }
 
         convController.withCurrentConv(new Callback<ConversationData>() {
             @Override

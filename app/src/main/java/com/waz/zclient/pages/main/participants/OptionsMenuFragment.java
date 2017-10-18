@@ -306,6 +306,10 @@ public class OptionsMenuFragment extends BaseFragment<OptionsMenuFragment.Contai
     }
 
     private void connectConversation(ConvId convId) {
+        if (ctrl == null) {
+            return;
+        }
+
         ctrl.setConvId(convId);
         ctrl.withConv(new Callback<ConversationData>() {
             @Override
@@ -317,7 +321,9 @@ public class OptionsMenuFragment extends BaseFragment<OptionsMenuFragment.Contai
     }
 
     private void disconnectConversation() {
-        ctrl.setConvId(null);
+        if (ctrl != null) {
+            ctrl.setConvId(null);
+        }
     }
 
     private void connectUser(UserId userId) {

@@ -58,7 +58,6 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.waz.api.MessageContent;
-import com.waz.api.SyncState;
 import com.waz.model.ConversationData;
 import com.waz.zclient.BuildConfig;
 import com.waz.zclient.OnBackPressedListener;

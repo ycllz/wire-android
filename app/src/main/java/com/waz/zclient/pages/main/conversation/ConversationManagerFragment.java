@@ -65,7 +65,6 @@ import com.waz.zclient.views.ConversationFragment;
 import com.waz.zclient.views.LoadingIndicatorView;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class ConversationManagerFragment extends BaseFragment<ConversationManagerFragment.Container> implements ParticipantFragment.Container,
@@ -491,7 +490,9 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
         getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), false);
 
         final List<UserId> userIds = new ArrayList<>(users.size());
-        for(User user: users) userIds.add(new UserId(user.getId()));
+        for(User user: users) {
+            userIds.add(new UserId(user.getId()));
+        }
 
         final ConversationController conversationController = inject(ConversationController.class);
         conversationController.withCurrentConv(new Callback<ConversationData>() {

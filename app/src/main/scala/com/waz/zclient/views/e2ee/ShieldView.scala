@@ -21,7 +21,6 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.ImageView
-import com.waz.threading.Threading
 import com.waz.utils.returning
 import com.waz.zclient.ViewHelper
 import com.waz.zclient.conversation.ConversationController

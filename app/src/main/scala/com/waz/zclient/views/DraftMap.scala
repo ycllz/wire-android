@@ -17,8 +17,6 @@
  */
 package com.waz.zclient.views
 
-import com.waz.ZLog.ImplicitTag._
-
 import scala.collection.mutable
 import com.waz.model.ConvId
 import com.waz.utils.events.Signal

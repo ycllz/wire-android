@@ -30,9 +30,8 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView.OnEditorActionListener
 import android.widget._
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api
 import com.waz.api.impl.ContentUriAssetForUpload
-import com.waz.api.{AssetFactory, EphemeralExpiration}
+import com.waz.api.EphemeralExpiration
 import com.waz.model.AssetMetaData.Image.Tag
 import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{MessageContent => _, _}

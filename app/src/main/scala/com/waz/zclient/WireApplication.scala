@@ -120,6 +120,7 @@ object WireApplication {
 
     bind [SharingController]               to new SharingController()
     bind [ConversationController]          to new ConversationController()
+    bind [NavigationController]      to new NavigationController()
 
 
     // current conversation data

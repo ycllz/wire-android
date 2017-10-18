@@ -18,7 +18,6 @@
 package com.waz.zclient.pages.main.conversation.controller;
 
 import android.view.View;
-import com.waz.api.IConversation;
 import com.waz.api.Message;
 import com.waz.api.OtrClient;
 import com.waz.api.User;

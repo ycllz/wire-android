@@ -20,7 +20,6 @@ package com.waz.zclient.pages.main.participants;
 import com.waz.model.ConvId;
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController;
 import com.waz.zclient.ui.theme.OptionsTheme;
-import timber.log.Timber;
 
 public class OptionsMenuControl {
 

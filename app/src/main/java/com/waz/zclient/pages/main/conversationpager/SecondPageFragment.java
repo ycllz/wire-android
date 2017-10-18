@@ -31,7 +31,6 @@ import com.waz.api.IConversation;
 import com.waz.api.UpdateListener;
 import com.waz.api.User;
 import com.waz.model.ConvId;
-import com.waz.model.ConversationData;
 import com.waz.model.UserId;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
@@ -115,6 +114,7 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
 
     @Override
     public void onDestroyView() {
+        getControllerFactory().getNavigationController().removePagerControllerObserver(this);
         super.onDestroyView();
     }
 

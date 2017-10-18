@@ -17,11 +17,9 @@
  */
 package com.waz.zclient.core.stores;
 
-import com.waz.api.IConversation
 import com.waz.zclient.core.stores.api.IZMessagingApiStore
 import com.waz.zclient.core.stores.connect.IConnectStore
 import com.waz.zclient.core.stores.conversation.IConversationStore
-import com.waz.zclient.core.stores.draft.IDraftStore
 import com.waz.zclient.core.stores.inappnotification.IInAppNotificationStore
 import com.waz.zclient.core.stores.network.INetworkStore
 import com.waz.zclient.core.stores.participants.IParticipantsStore
@@ -42,7 +40,6 @@ abstract class StoreFactory extends IStoreFactory {
   private val _singleParticipantStore = lazyStore { createSingleParticipantStore() }
   private val _inAppNotificationStore = lazyStore { createInAppNotificationStore() }
   private val _connectStore = lazyStore { createConnectStore() }
-  private val _draftStore = lazyStore { createDraftStore() }
   private val _zMessagingApiStore = lazyStore { createZMessagingApiStore() }
   private val _networkStore = lazyStore { createNetworkStore() }
 
@@ -56,7 +53,6 @@ abstract class StoreFactory extends IStoreFactory {
   protected def createSingleParticipantStore(): ISingleParticipantStore
   protected def createInAppNotificationStore(): IInAppNotificationStore
   protected def createConnectStore(): IConnectStore
-  protected def createDraftStore(): IDraftStore
   protected def createNetworkStore(): INetworkStore
 
   override def zMessagingApiStore = _zMessagingApiStore()
@@ -67,7 +63,6 @@ abstract class StoreFactory extends IStoreFactory {
   override def participantsStore = _participantsStore()
   override def singleParticipantStore = _singleParticipantStore()
   override def inAppNotificationStore = _inAppNotificationStore()
-  override def draftStore = _draftStore()
   override def networkStore = _networkStore()
 
   override def reset(): Unit = {
@@ -77,7 +72,6 @@ abstract class StoreFactory extends IStoreFactory {
     participantsStore.tearDown()
     inAppNotificationStore.tearDown()
     singleParticipantStore.tearDown()
-    draftStore.tearDown()
     networkStore.tearDown()
 
     tornDown = false
