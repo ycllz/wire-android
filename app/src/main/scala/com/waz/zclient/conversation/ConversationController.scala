@@ -68,14 +68,9 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   val currentConvIsVerified: Signal[Boolean] = currentConv.map { _.verified == Verification.VERIFIED }
   val currentConvIsGroup: Signal[Boolean] = currentConv.flatMap { conv => Signal.future(isGroup(conv)) }
 
-  for {
-    z <- zms
-    convId <- currentConvId
-  } yield z.conversations.forceNameUpdate(convId)
+  currentConvId.onUi { convId => zms(_.conversations.forceNameUpdate(convId)) }
 
-  def withCurrentConv(f: (ConversationData) => Unit): Future[Unit] = currentConv.head.map(f)
-
-  // this should be the only UI entry point to change conv in SE
+    // this should be the only UI entry point to change conv in SE
   def selectConv(convId: Option[ConvId], requester: ConversationChangeRequester): Future[Unit] = convId match {
     case None => Future.successful({})
     case Some(_) =>

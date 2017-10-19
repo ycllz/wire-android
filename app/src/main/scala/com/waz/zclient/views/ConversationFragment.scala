@@ -37,7 +37,7 @@ import com.waz.api.impl.ContentUriAssetForUpload
 import com.waz.model.{AssetId, ConvId, ConversationData, MessageData}
 import com.waz.model.ConversationData.ConversationType
 import com.waz.threading.{CancellableFuture, Threading}
-import com.waz.utils.events.Signal
+import com.waz.utils.events.{EventStreamWithAuxSignal, Signal}
 import com.waz.utils.returningF
 import com.waz.utils.wrappers.URI
 import com.waz.zclient.Intents.ShowDevicesIntent
@@ -90,7 +90,9 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
   private lazy val convController = inject[ConversationController]
   private lazy val collectionController = inject[CollectionController]
 
-  private lazy val previewShown = Signal(false)
+  private val previewShown = Signal(false)
+  private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
+  private lazy val cancelPreviewOnChange = new EventStreamWithAuxSignal(convChange, previewShown)
 
   private lazy val draftMap = inject[DraftMap]
 
@@ -261,8 +263,8 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
     convController.currentConv.onUi { conv => toolbarTitle.setText(conv.displayName) }
 
-    Signal.wrap(convChange).zip(previewShown).onUi {
-      case (ConversationChange(Some(from), Some(to), _), true) if from != to => imagePreviewCallback.onCancelPreview()
+    cancelPreviewOnChange.onUi {
+      case (change, Some(true)) if !change.noChange => imagePreviewCallback.onCancelPreview()
       case _ =>
     }
 
@@ -361,8 +363,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     super.onStop()
   }
 
-  private lazy val convChange = convController.convChanged.filter { _.to.isDefined }
-
   private def updateConv(fromId: Option[ConvId], toConv: ConversationData): Unit = {
     KeyboardUtils.hideKeyboard(getActivity)
     loadingIndicatorView.hide()
@@ -417,7 +417,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     }
 
     override def onSendPictureFromPreview(imageAsset: ImageAsset, source: ImagePreviewLayout.Source): Unit = imageAsset match {
-      case a: com.waz.api.impl.ImageAsset => convController.withCurrentConv { conv =>
+      case a: com.waz.api.impl.ImageAsset => convController.currentConv.head.map { conv =>
         convController.sendMessage(conv.id, a)
         extendedCursorContainer.close(true)
         onCancelPreview()
@@ -539,7 +539,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       cursorView.onExtendedCursorClosed()
 
       if (lastType == ExtendedCursorContainer.Type.EPHEMERAL)
-        convController.withCurrentConv { conv =>
+        convController.currentConv.head.map { conv =>
           if (conv.ephemeral != EphemeralExpiration.NONE)
             getControllerFactory.getUserPreferencesController.setLastEphemeralValue(conv.ephemeral.milliseconds)
         }
@@ -591,7 +591,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case ExtendedCursorContainer.Type.NONE =>
       case ExtendedCursorContainer.Type.EMOJIS =>
         extendedCursorContainer.openEmojis(getControllerFactory.getUserPreferencesController.getRecentEmojis, getControllerFactory.getUserPreferencesController.getUnsupportedEmojis, emojiKeyboardLayoutCallback)
-      case ExtendedCursorContainer.Type.EPHEMERAL => convController.withCurrentConv { conv =>
+      case ExtendedCursorContainer.Type.EPHEMERAL => convController.currentConv.head.map { conv =>
         extendedCursorContainer.openEphemeral(ephemeralLayoutCallback, conv.ephemeral)
       }
       case ExtendedCursorContainer.Type.VOICE_FILTER_RECORDING =>
@@ -880,7 +880,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     val imagePreviewLayout = LayoutInflater.from(getContext).inflate(R.layout.fragment_cursor_images_preview, containerPreview, false).asInstanceOf[ImagePreviewLayout]
     imagePreviewLayout.setImageAsset(asset, source, imagePreviewCallback)
     imagePreviewLayout.setAccentColor(getControllerFactory.getAccentColorController.getAccentColor.getColor)
-    convController.withCurrentConv { conv => imagePreviewLayout.setTitle(conv.displayName) }
+    convController.currentConv.head.map { conv => imagePreviewLayout.setTitle(conv.displayName) }
     containerPreview.addView(imagePreviewLayout)
     openPreview(containerPreview)
   }

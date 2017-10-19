@@ -302,7 +302,7 @@ class MainActivity extends BaseActivity
         verbose(s"setting conversation: $convId")
         conversationController.selectConv(convId, ConversationChangeRequester.INTENT).map { _ =>
           conversationController.setEphemeralExpiration(exp)
-          if (call) conversationController.withCurrentConv { conv => startCall(withVideo = false, conv) }
+          if (call) conversationController.currentConv.head.map { conv => startCall(withVideo = false, conv) }
         }
     } (Threading.Ui).future
 
@@ -447,7 +447,7 @@ class MainActivity extends BaseActivity
 
   def onInitialized(self: Self) = enterApplication(self)
 
-  def onStartCall(withVideo: Boolean) = conversationController.withCurrentConv { conv =>
+  def onStartCall(withVideo: Boolean) = conversationController.currentConv.head.map { conv =>
     handleOnStartCall(withVideo, conv)
   }
 
