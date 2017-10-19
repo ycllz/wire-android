@@ -162,10 +162,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     super.onViewCreated(view, savedInstanceState)
 
     if (savedInstanceState != null) previewShown ! savedInstanceState.getBoolean(SAVED_STATE_PREVIEW, false)
-  }
 
-  override def onStart(): Unit = {
-    super.onStart()
 
     implicit val ctx: Context = getActivity
 
@@ -186,6 +183,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     audioMessageRecordingView = returningF( findById( R.id.amrv_audio_message_recording) ){ view: AudioMessageRecordingView =>
       view.setVisibility(View.INVISIBLE)
       view.setCallback(audioMessageRecordingCallback)
+      view.setDarkTheme(inject[ThemeController].isDarkTheme)
     }
 
     // invisible footer to scroll over inputfield
@@ -195,73 +193,15 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       )
     }
 
-    leftMenu = returningF( findById(R.id.conversation_left_menu) ){ menu: ActionMenuView =>
-      menu.setOnMenuItemClickListener(new ActionMenuView.OnMenuItemClickListener() {
-        override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
-          case R.id.action_collection =>
-            collectionController.openCollection()
-            true
-          case _ => false
-        }
-      })
-    }
+    leftMenu = findById(R.id.conversation_left_menu)
 
-
-    toolbar = returningF( findById(R.id.t_conversation_toolbar) ) { t: Toolbar =>
-
-      t.setOnClickListener(new View.OnClickListener() {
-        override def onClick(v: View): Unit =
-          getControllerFactory.getConversationScreenController.showParticipants(t, false)
-      })
-
-      t.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
-        override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
-          case R.id.action_audio_call =>
-            getControllerFactory.getCallingController.startCall(false)
-            cursorView.closeEditMessage(false)
-            true
-          case R.id.action_video_call =>
-            getControllerFactory.getCallingController.startCall(true)
-            cursorView.closeEditMessage(false)
-            true
-          case _ => false
-        }
-      })
-
-      t.setNavigationOnClickListener(new View.OnClickListener() {
-        override def onClick(v: View): Unit = {
-          cursorView.closeEditMessage(false)
-          getActivity.onBackPressed()
-          KeyboardUtils.closeKeyboardIfShown(getActivity)
-        }
-      })
-    }
+    toolbar = findById(R.id.t_conversation_toolbar)
 
     if (LayoutSpec.isTablet(getContext) && isInLandscape(getContext)) toolbar.setNavigationIcon(null)
 
     toolbarTitle = ViewUtils.getView(toolbar, R.id.tv__conversation_toolbar__title).asInstanceOf[TextView]
+    convController.currentConvName.onUi { updateTitle }
 
-    getControllerFactory.getGlobalLayoutController.addKeyboardHeightObserver(extendedCursorContainer)
-    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(extendedCursorContainer)
-    extendedCursorContainer.setCallback(extendedCursorContainerCallback)
-
-    getControllerFactory.getRequestPermissionsController.addObserver(requestPermissionsObserver)
-    getControllerFactory.getOrientationController.addOrientationControllerObserver(orientationControllerObserver)
-    cursorView.setCallback(cursorCallback)
-
-    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText)) cursorView.setText(draftText) }
-
-    audioMessageRecordingView.setDarkTheme(inject[ThemeController].isDarkTheme)
-    getControllerFactory.getNavigationController.addNavigationControllerObserver(navigationControllerObserver)
-    getControllerFactory.getNavigationController.addPagerControllerObserver(pagerControllerObserver)
-    getControllerFactory.getGiphyController.addObserver(giphyObserver)
-    getControllerFactory.getSingleImageController.addSingleImageObserver(singleImageObserver)
-    getControllerFactory.getAccentColorController.addAccentColorObserver(accentColorObserver)
-    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
-    getStoreFactory.inAppNotificationStore.addInAppNotificationObserver(syncErrorObserver)
-    getControllerFactory.getSlidingPaneController.addObserver(slidingPaneObserver)
-
-    convController.currentConv.onUi { conv => toolbarTitle.setText(conv.displayName) }
 
     cancelPreviewOnChange.onUi {
       case (change, Some(true)) if !change.noChange => imagePreviewCallback.onCancelPreview()
@@ -310,6 +250,67 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
       case _ =>
     }
   }
+
+  override def onStart(): Unit = {
+    super.onStart()
+
+    toolbar.setOnClickListener(new View.OnClickListener() {
+      override def onClick(v: View): Unit =
+        getControllerFactory.getConversationScreenController.showParticipants(toolbar, false)
+    })
+
+    toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+      override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
+        case R.id.action_audio_call =>
+          getControllerFactory.getCallingController.startCall(false)
+          cursorView.closeEditMessage(false)
+          true
+        case R.id.action_video_call =>
+          getControllerFactory.getCallingController.startCall(true)
+          cursorView.closeEditMessage(false)
+          true
+        case _ => false
+      }
+    })
+
+    toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+      override def onClick(v: View): Unit = {
+        cursorView.closeEditMessage(false)
+        getActivity.onBackPressed()
+        KeyboardUtils.closeKeyboardIfShown(getActivity)
+      }
+    })
+
+    leftMenu.setOnMenuItemClickListener(new ActionMenuView.OnMenuItemClickListener() {
+      override def onMenuItemClick(item: MenuItem): Boolean = item.getItemId match {
+        case R.id.action_collection =>
+          collectionController.openCollection()
+          true
+        case _ => false
+      }
+    })
+
+    getControllerFactory.getGlobalLayoutController.addKeyboardHeightObserver(extendedCursorContainer)
+    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(extendedCursorContainer)
+    extendedCursorContainer.setCallback(extendedCursorContainerCallback)
+
+    getControllerFactory.getRequestPermissionsController.addObserver(requestPermissionsObserver)
+    getControllerFactory.getOrientationController.addOrientationControllerObserver(orientationControllerObserver)
+    cursorView.setCallback(cursorCallback)
+
+    draftMap.withCurrentDraft { draftText => if (!TextUtils.isEmpty(draftText)) cursorView.setText(draftText) }
+
+    getControllerFactory.getNavigationController.addNavigationControllerObserver(navigationControllerObserver)
+    getControllerFactory.getNavigationController.addPagerControllerObserver(pagerControllerObserver)
+    getControllerFactory.getGiphyController.addObserver(giphyObserver)
+    getControllerFactory.getSingleImageController.addSingleImageObserver(singleImageObserver)
+    getControllerFactory.getAccentColorController.addAccentColorObserver(accentColorObserver)
+    getControllerFactory.getGlobalLayoutController.addKeyboardVisibilityObserver(keyboardVisibilityObserver)
+    getStoreFactory.inAppNotificationStore.addInAppNotificationObserver(syncErrorObserver)
+    getControllerFactory.getSlidingPaneController.addObserver(slidingPaneObserver)
+  }
+
+  private def updateTitle(text: String) = if (toolbarTitle != null) toolbarTitle.setText(text)
 
   override def onResume(): Unit = {
     super.onResume()
