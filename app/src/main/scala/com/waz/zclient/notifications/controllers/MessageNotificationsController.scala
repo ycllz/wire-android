@@ -24,7 +24,7 @@ import android.graphics._
 import android.net.Uri
 import android.os.Build
 import android.support.annotation.RawRes
-import android.support.v4.app.NotificationCompat
+import android.support.v4.app.{NotificationCompat, RemoteInput}
 import android.text.style.{ForegroundColorSpan, StyleSpan}
 import android.text.{SpannableString, Spanned, TextUtils}
 import com.waz.ZLog.ImplicitTag._
@@ -79,8 +79,8 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
 
   colors { accentColors = _ }
 
-  Signal.future(ZMessaging.globalModule).flatMap(_.notifications.groupedNotifications).onUi {
-    _.foreach {
+  Signal.future(ZMessaging.globalModule).flatMap(_.notifications.groupedNotifications).onUi { notifications =>
+    notifications.foreach {
       case (account, (shouldBeSilent, nots)) =>
         val teamName = for {
           zms <- zms.head
@@ -91,10 +91,19 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
           }
         } yield team.map(_.name)
         teamName.map { teamName =>
-          if (BundleEnabled)
-            createSummaryNotification(account, shouldBeSilent || nots.forall(_.hasBeenDisplayed), nots, teamName)
+          if (BundleEnabled) createSummaryNotification(account, shouldBeSilent || nots.forall(_.hasBeenDisplayed), nots, teamName)
           createConvNotifications(account, shouldBeSilent || nots.forall(_.hasBeenDisplayed), nots, teamName)
         } (Threading.Ui)
+    }
+    if (BundleEnabled) {
+      val currentBundles = notifications.keys.map(toNotificationGroupId).toSeq
+      val currentNotifications = notifications.toSeq.flatMap {
+        case (account, (_, nots)) => nots.map(_.convId).distinct.map(cId => toNotificationConvId(account, cId))
+      } ++ currentBundles
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        notManager.getActiveNotifications
+          .collect { case notification if !currentNotifications.contains(notification.getId) => notification.getId }
+          .foreach(notManager.cancel)
     }
   }
 
@@ -135,9 +144,11 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
       notManager.cancel(account.str.hashCode)
       return
     }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+      if (notManager.getActiveNotifications.exists(_.getId == toNotificationGroupId(account)))
+        return
 
-    if (notManager.getActiveNotifications.exists(_.getId == toNotificationGroupId(account)))
-      return
+    verbose(s"creating summary notification")
 
     val inboxStyle = new NotificationCompat.InboxStyle()
 
@@ -152,6 +163,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
       .setStyle(inboxStyle)
       .setGroupSummary(true)
       .setGroup(account.str)
+      .setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(account, context))
 
     teamName.foreach(builder.setContentInfo)
     notificationColor(account).foreach(builder.setColor)
@@ -166,6 +178,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
     def publishNotification(convId: ConvId, notification: Notification) = {
       attachNotificationLed(notification)
       attachNotificationSound(notification, nots, silent)
+      verbose(s"creating not: ${toNotificationConvId(account, convId)}")
       notManager.notify(toNotificationConvId(account, convId), notification)
     }
 
@@ -244,7 +257,6 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
       .setWhen(displayTime.toEpochMilli)
       .setStyle(style)
       .setAutoCancel(true)
-      .setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(accountId, context))
 
     notificationColor(accountId).foreach(builder.setColor)
 
@@ -271,11 +283,11 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
     val builder = commonBuilder(accountId, title, n.time, bigTextStyle, silent)
       .setContentText(body)
       .setContentIntent(OpenConvIntent(accountId, n.convId, requestBase))
+      .setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(accountId, n.convId, context))
 
     if (n.tpe != NotificationType.CONNECT_REQUEST) {
-      builder
-        .addAction(R.drawable.ic_action_call, getString(R.string.notification__action__call), CallIntent(accountId, n.convId, requestBase + 1))
-        .addAction(R.drawable.ic_action_reply, getString(R.string.notification__action__reply), QuickReplyIntent(accountId, n.convId, requestBase + 2))
+      builder.addAction(R.drawable.ic_action_call, getString(R.string.notification__action__call), CallIntent(accountId, n.convId, requestBase + 1))
+      addQuickReplyAction(builder, accountId, n.convId, requestBase + 2)
     }
     builder
       .setOnlyAlertOnce(noTicker)
@@ -306,12 +318,17 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
 
     val builder = commonBuilder(accountId, title, ns.maxBy(_.time).time, inboxStyle, silent)
 
+    if (isSingleConv)
+      builder.setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(accountId, convIds.head, context))
+    else
+      builder.setDeleteIntent(NotificationsAndroidService.clearNotificationsIntent(accountId, context))
+
     if (isSingleConv) {
       val requestBase = System.currentTimeMillis.toInt
       builder
         .setContentIntent(OpenConvIntent(accountId, convIds.head, requestBase))
         .addAction(R.drawable.ic_action_call, getString(R.string.notification__action__call), CallIntent(accountId, convIds.head, requestBase + 1))
-        .addAction(R.drawable.ic_action_reply, getString(R.string.notification__action__reply), QuickReplyIntent(accountId, convIds.head, requestBase + 2))
+        addQuickReplyAction(builder, accountId, convIds.head, requestBase + 2)
     }
     else builder.setContentIntent(OpenAccountIntent(accountId))
 
@@ -382,6 +399,21 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
     } else 0
 
     getStringOrEmpty(prefixId, n.userName.getOrElse(""), n.convName.filterNot(_.isEmpty).getOrElse(getString(R.string.notification__message__group__default_conversation_name)))
+  }
+
+  def addQuickReplyAction(builder: NotificationCompat.Builder, accountId: AccountId, convId: ConvId, requestCode: Int): Unit = {
+    if (BundleEnabled) {
+      val remoteInput = new RemoteInput.Builder(NotificationsAndroidService.InstantReplyKey)
+        .setLabel(getString(R.string.notification__action__reply))
+        .build
+      val replyAction = new NotificationCompat.Action.Builder(R.drawable.ic_action_reply, getString(R.string.notification__action__reply), NotificationsAndroidService.quickReplyIntent(accountId, convId, cxt))
+        .addRemoteInput(remoteInput)
+        .setAllowGeneratedReplies(true)
+        .build()
+      builder.addAction(replyAction)
+    } else {
+      builder.addAction(R.drawable.ic_action_reply, getString(R.string.notification__action__reply), QuickReplyIntent(accountId, convId, requestCode))
+    }
   }
 
   private def notificationColor(accountId: AccountId) = {
