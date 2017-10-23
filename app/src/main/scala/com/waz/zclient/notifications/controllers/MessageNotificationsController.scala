@@ -80,7 +80,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
   colors { accentColors = _ }
 
   Signal.future(ZMessaging.globalModule).flatMap(_.notifications.groupedNotifications).onUi { notifications =>
-    notifications.foreach {
+    notifications.toSeq.sortBy(_._1.str.hashCode).foreach {
       case (account, (shouldBeSilent, nots)) =>
         val teamName = for {
           zms <- zms.head
@@ -91,8 +91,8 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
           }
         } yield team.map(_.name)
         teamName.map { teamName =>
-          if (BundleEnabled) createSummaryNotification(account, shouldBeSilent || nots.forall(_.hasBeenDisplayed), nots, teamName)
-          createConvNotifications(account, shouldBeSilent || nots.forall(_.hasBeenDisplayed), nots, teamName)
+          if (BundleEnabled) createSummaryNotification(account, shouldBeSilent, nots, teamName)
+          createConvNotifications(account, shouldBeSilent, nots, teamName)
         } (Threading.Ui)
     }
     if (BundleEnabled) {
@@ -304,17 +304,28 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
       if (isSingleConv && ns.head.isGroupConv)
         ns.head.convName.getOrElse("")
       else if (isSingleConv)
-        ns.head.userName.getOrElse("")
+        ns.head.convName.orElse(ns.head.userName).getOrElse("")
       else
         getQuantityString(R.plurals.notification__new_messages__multiple, ns.size, Integer.valueOf(ns.size), convIds.size.toString)
 
-    val title = returning(new SpannableString(titleText)) { _.setSpan(new StyleSpan(Typeface.BOLD), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
+    val separator = " • "
+
+    val title = if (isSingleConv && ns.size > 5)
+      returning(new SpannableString(titleText + separator + getQuantityString(R.plurals.conversation_list__new_message_count, ns.size, Integer.valueOf(ns.size)))) { titleSpan =>
+        titleSpan.setSpan(new StyleSpan(Typeface.BOLD), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        titleSpan.setSpan(new StyleSpan(Typeface.ITALIC), titleText.length + separator.length, titleSpan.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        titleSpan.setSpan(new ForegroundColorSpan(Color.GRAY), titleText.length, titleSpan.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      }
+    else
+      returning(new SpannableString(titleText)) { titleSpan =>
+        titleSpan.setSpan(new StyleSpan(Typeface.BOLD), 0, titleText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      }
 
     val inboxStyle = new NotificationCompat.InboxStyle()
       .setBigContentTitle(title)
 
     if (BundleEnabled)
-      inboxStyle.setSummaryText(teamName.getOrElse(getQuantityString(R.plurals.conversation_list__new_message_count, ns.size, Integer.valueOf(ns.size))))
+      teamName.foreach(inboxStyle.setSummaryText)
 
     val builder = commonBuilder(accountId, title, ns.maxBy(_.time).time, inboxStyle, silent)
 
@@ -364,7 +375,8 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
       case RENAME                   => getString(R.string.notification__message__group__renamed_conversation, message)
       case MEMBER_LEAVE             => getString(R.string.notification__message__group__remove)
       case MEMBER_JOIN              => getString(R.string.notification__message__group__add)
-      case LIKE                     => getString(R.string.notification__message__group__liked)
+      case LIKE if n.message.nonEmpty  => getString(R.string.notification__message__liked, n.message)
+      case LIKE                     => getString(R.string.notification__message__liked_message)
       case CONNECT_ACCEPTED         => if (n.userName.isEmpty) getString(R.string.notification__message__generic__accept_request)    else getString(R.string.notification__message__single__accept_request, n.userName.getOrElse(""))
       case MESSAGE_SENDING_FAILED   => getString(R.string.notification__message__send_failed)
       case _ => ""

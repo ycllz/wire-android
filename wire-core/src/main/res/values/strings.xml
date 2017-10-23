@@ -723,8 +723,12 @@
     <string name="notification__message__generic__accept_request">You have a new connection</string>
     <string name="notification__message__single__accept_request">You and %1$s are now connected</string>
     <string name="notification__message__group__default_conversation_name">group conversation</string>
-    <string name="notification__message__group__liked">\u2764 your message</string>
     <string name="notification__message__send_failed">Message failed to send</string>
+
+    <string name="notification__message__liked">\u2764 ‘%1$s’</string>
+    <string name="notification__message__liked_message">\u2764 your message</string>
+    <string name="notification__message__liked_picture">\u2764 your picture</string>
+    <string name="notification__message__liked_file">\u2764 your file</string>
 
     <!-- ephemeral -->
     <string name="notification__message__ephemeral_details">Press for more</string>
