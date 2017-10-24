@@ -105,7 +105,7 @@ class CallingNotificationsController(implicit cxt: WireContext, eventContext: Ev
         .setContentText(message)
         .setContentIntent(OpenAccountIntent(account))
         .setStyle(new NotificationCompat.BigTextStyle()
-          .setBigContentTitle(conv.displayName)
+          .setBigContentTitle(title)
           .bigText(message))
         .setCategory(NotificationCompat.CATEGORY_CALL)
         .setPriority(NotificationCompat.PRIORITY_MAX)
