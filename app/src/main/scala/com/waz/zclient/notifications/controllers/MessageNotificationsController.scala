@@ -141,7 +141,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
   private def createSummaryNotification(account: AccountId, silent: Boolean, nots: Seq[NotificationInfo], teamName: Option[String]): Unit = {
 
     if (nots.isEmpty) {
-      notManager.cancel(account.str.hashCode)
+      notManager.cancel(toNotificationGroupId(account))
       return
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -343,7 +343,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
     }
     else builder.setContentIntent(OpenAccountIntent(accountId))
 
-    val messages = ns.map(n => getMessage(n, multiple = true, singleConversationInBatch = isSingleConv, singleUserInBatch = users.size == 1 && isSingleConv)).takeRight(5)
+    val messages = ns.sortBy(_.time).map(n => getMessage(n, multiple = true, singleConversationInBatch = isSingleConv, singleUserInBatch = users.size == 1 && isSingleConv)).takeRight(5)
     builder.setContentText(messages.last)
     messages.foreach(inboxStyle.addLine)
 
@@ -442,7 +442,7 @@ class MessageNotificationsController(implicit inj: Injector, cxt: Context, event
 object MessageNotificationsController {
 
   def toNotificationGroupId(accountId: AccountId): Int = accountId.str.hashCode()
-  def toNotificationConvId(accountId: AccountId, convId: ConvId): Int = accountId.str.hashCode() + convId.str.hashCode()
+  def toNotificationConvId(accountId: AccountId, convId: ConvId): Int = (accountId.str + convId.str).hashCode()
 
   val ZETA_MESSAGE_NOTIFICATION_ID: Int = 1339272
   val ZETA_EPHEMERAL_NOTIFICATION_ID: Int = 1339279
