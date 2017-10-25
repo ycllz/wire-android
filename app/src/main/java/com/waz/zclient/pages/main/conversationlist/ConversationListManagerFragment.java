@@ -18,7 +18,6 @@
 package com.waz.zclient.pages.main.conversationlist;
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -80,6 +79,7 @@ import com.waz.zclient.ui.optionsmenu.OptionsMenu;
 import com.waz.zclient.ui.optionsmenu.OptionsMenuItem;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.utils.Callback;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.LoadingIndicatorView;
@@ -137,13 +137,8 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         mainContainer = ViewUtils.getView(view, R.id.fl__conversation_list_main);
         startuiLoadingIndicatorView = ViewUtils.getView(view, R.id.liv__conversations__loading_indicator);
         listLoadingIndicatorView = ViewUtils.getView(view, R.id.lbv__conversation_list__loading_indicator);
+        startuiLoadingIndicatorView.setColor(ContextUtils.getColorWithTheme(R.color.people_picker__loading__color, getContext()));
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            startuiLoadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
-        } else {
-            startuiLoadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color, getContext().getTheme()));
-        }
         listLoadingIndicatorView.setColor(getControllerFactory().getAccentColorController().getColor());
 
         confirmationMenu = ViewUtils.getView(view, R.id.cm__confirm_action_light);
@@ -240,7 +235,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
     //
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    private int animationType = LoadingIndicatorView.SPINNER(); // TODO: migrate to Scala and use actual LoadingIndicatorView.AnimationType
+    private LoadingIndicatorView.AnimationType animationType = LoadingIndicatorView.SPINNER();
 
     @Override
     public void onConversationListUpdated(@NonNull final ConversationsList conversationsList) {

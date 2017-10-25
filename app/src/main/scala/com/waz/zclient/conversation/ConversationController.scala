@@ -28,7 +28,7 @@ import com.waz.zclient.controllers.UserAccountsController
 import com.waz.zclient.conversation.ConversationController.ConversationChange
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.utils.Callback
-import com.waz.zclient.{BaseActivity, Injectable, Injector}
+import com.waz.zclient.{Injectable, Injector}
 import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api
@@ -45,7 +45,7 @@ import scala.concurrent.duration._
 import com.waz.utils._
 
 class ConversationController(implicit injector: Injector, context: Context, ec: EventContext) extends Injectable {
-  import Threading.Implicits.Ui
+  import Threading.Implicits.Background
 
   private val zms = inject[Signal[ZMessaging]]
   private val userAccounts = inject[UserAccountsController]
@@ -68,7 +68,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   val currentConvIsVerified: Signal[Boolean] = currentConv.map { _.verified == Verification.VERIFIED }
   val currentConvIsGroup: Signal[Boolean] = currentConv.flatMap { conv => Signal.future(isGroup(conv)) }
 
-  currentConvId.onUi { convId => zms(_.conversations.forceNameUpdate(convId)) }
+  currentConvId { convId => zms(_.conversations.forceNameUpdate(convId)) }
 
     // this should be the only UI entry point to change conv in SE
   def selectConv(convId: Option[ConvId], requester: ConversationChangeRequester): Future[Unit] = convId match {
@@ -84,25 +84,14 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   def loadConv(convId: ConvId): Future[Option[ConversationData]] = storage.head.flatMap(_.get(convId))
 
-  def createAndOpenConv(users: Array[UserId], requester: ConversationChangeRequester, activity: BaseActivity): Future[Unit] =
-    for {
-      z <- zms.head
-      user <- z.usersStorage.get(z.selfUserId)
-      conv <- if (users.length == 1 && !userAccounts.isTeamAccount) z.convsUi.getOrCreateOneToOneConversation(users.head)
-              else z.convsUi.createGroupConversation(ConvId(), users, userAccounts.teamId)
-    } yield selectConv(Option(conv.id), ConversationChangeRequester.START_CONVERSATION)
-
   def getOrCreateConv(userId: UserId): Future[ConversationData] = for {
     z <- zms.head
     conv <- z.convsUi.getOrCreateOneToOneConversation(userId)
-  } yield {
-    conv
-  }
+  } yield conv
 
-  def isGroup(conv: ConversationData): Future[Boolean] = {
+  def isGroup(conv: ConversationData): Future[Boolean] =
     if (conv.team.isEmpty) Future.successful(conv.convType == ConversationType.Group)
     else zms.map(_.membersStorage).head.flatMap(_.getByConv(conv.id)).map { _.size > 2 } // maybe this could be changed to activeMembers
-  }
 
   def setEphemeralExpiration(expiration: EphemeralExpiration): Future[Unit] = for {
     z <- zms.head
@@ -155,7 +144,7 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def setCurrentConversationToNext(requester: ConversationChangeRequester): Future[Unit] =
     currentConvId.head
       .map { id => convStore.nextConversation(id) }
-      .map { convId =>selectConv(convId, requester) }
+      .map { convId => selectConv(convId, requester) }
 
   def archive(convId: ConvId, archive: Boolean): Unit = {
     zms.head.map { _.convsUi.setConversationArchived(convId, archive) }
@@ -182,21 +171,21 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   def iConv(id: ConvId): IConversation = convStore.getConversation(id.str)
   def iCurrentConv: IConversation = currentConvId.currentValue.map(iConv).orNull
 
-  def withCurrentConv(callback: Callback[ConversationData]): Unit = currentConv.head.foreach( callback.callback )
-  def withCurrentConvName(callback: Callback[String]): Unit = currentConvName.head.foreach(callback.callback)
-  def withCurrentConvType(callback: Callback[IConversation.Type]): Unit = currentConvType.head.foreach(callback.callback)
+  def withCurrentConv(callback: Callback[ConversationData]): Unit = currentConv.head.foreach( callback.callback )(Threading.Ui)
+  def withCurrentConvName(callback: Callback[String]): Unit = currentConvName.head.foreach(callback.callback)(Threading.Ui)
+  def withCurrentConvType(callback: Callback[IConversation.Type]): Unit = currentConvType.head.foreach(callback.callback)(Threading.Ui)
 
   def getCurrentConvId: ConvId = currentConvId.currentValue.orNull
   def onConvChanged(callback: Callback[ConversationChange]): Unit =  convChanged.onUi { callback.callback }
-  def withConvLoaded(convId: ConvId, callback: Callback[ConversationData]): Unit =
-    loadConv(convId).foreach {
-      case Some(data) => callback.callback(data)
-      case None =>
-    }
+  def withConvLoaded(convId: ConvId, callback: Callback[ConversationData]): Unit = loadConv(convId).foreach {
+    case Some(data) => callback.callback(data)
+    case None =>
+  }(Threading.Ui)
 
   def withMembers(convId: ConvId, callback: Callback[java.util.Collection[UserData]]): Unit =
-    loadMembers(convId).foreach { users =>callback.callback(users.asJavaCollection) }
-  def withCurrentConvMembers(callback: Callback[java.util.Collection[UserData]]): Unit = currentConvId.head.foreach { id => withMembers(id, callback) }
+    loadMembers(convId).foreach { users => callback.callback(users.asJavaCollection) }(Threading.Ui)
+  def withCurrentConvMembers(callback: Callback[java.util.Collection[UserData]]): Unit =
+    currentConvId.head.foreach { id => withMembers(id, callback) }(Threading.Ui)
   def addMembers(id: ConvId, users: java.util.List[UserId]): Unit = addMembers(id, users.asScala.toSet)
 
   def createGroupConversation(users: java.util.List[UserId], conversationChangerSender: ConversationChangeRequester): Unit =

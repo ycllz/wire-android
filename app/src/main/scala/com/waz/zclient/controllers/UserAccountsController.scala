@@ -19,14 +19,12 @@ package com.waz.zclient.controllers
 
 import android.content.Context
 import com.waz.ZLog.ImplicitTag._
-import com.waz.model.ConversationData.ConversationType
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
-import com.waz.zclient.utils.Callback
 import com.waz.zclient.{BaseActivity, Injectable, Injector}
 
 import scala.concurrent.Future
@@ -86,16 +84,6 @@ class UserAccountsController(implicit injector: Injector, context: Context, ec: 
     zmsSet   <- ZMessaging.currentAccounts.zmsInstances
     countMap <- Signal.sequence(zmsSet.map(z => z.convsStorage.convsSignal.map(c => z.accountId -> c.conversations.map(unreadCountForConv).sum)).toSeq:_*)
   } yield countMap.toMap
-
-  //Things for java
-  //TODO hacky mchackerson - needed for the conversation fragment, remove ASAP
-  def setIsGroupListener(id: ConvId, callback: Callback[java.lang.Boolean]): Unit =
-    for {
-      Some(conv) <- zms.map(_.convsStorage).head.flatMap(_.get(id))
-      isGroup    <-
-        if (conv.team.isEmpty) Future.successful(conv.convType == ConversationType.Group)
-        else zms.map(_.membersStorage).head.flatMap(_.getByConv(conv.id)).map(_.map(_.userId).size > 2)
-    } callback.callback(isGroup)
 
   def createAndOpenConversation(users: Array[UserId], requester: ConversationChangeRequester,  activity: BaseActivity): Future[Unit] = {
     val createConv = for {

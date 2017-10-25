@@ -29,8 +29,11 @@ import com.waz.zclient.ui.utils.ResourceUtils
 
 
 object ContextUtils {
+  def getColor(resId: Int)(implicit context: Context): Int = ContextCompat.getColor(context, resId)
 
-  def getColor(resId: Int)(implicit context: Context) = ContextCompat.getColor(context, resId)
+  def getColorWithTheme(resId: Int, context: Context): Int =
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) getColor(resId)(context)
+    else context.getResources.getColor(resId, context.getTheme)
 
   def getColorStateList(resId: Int)(implicit context: Context) = ContextCompat.getColorStateList(context, resId)
 

@@ -19,12 +19,12 @@ package com.waz.zclient.views.e2ee
 
 import android.content.Context
 import android.util.AttributeSet
-import android.view.View
 import android.widget.ImageView
 import com.waz.utils.returning
 import com.waz.zclient.ViewHelper
 import com.waz.zclient.conversation.ConversationController
 import com.waz.zclient.ui.R
+import com.waz.zclient.utils.RichView
 
 class ShieldView(context: Context, attrs: AttributeSet, defStyleAttr: Int) extends ImageView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -37,9 +37,5 @@ class ShieldView(context: Context, attrs: AttributeSet, defStyleAttr: Int) exten
 
   setImageResource(if (verified) R.drawable.shield_full else R.drawable.shield_half)
 
-  // TODO: check and migrate the way the visibility is set in ParticipantHeaderFragment and SingleParticipantFragment
-  inject[ConversationController].currentConvIsVerified.onUi {
-    case true  => setVisibility(View.VISIBLE)
-    case false => setVisibility(View.GONE)
-  }
+  inject[ConversationController].currentConvIsVerified.onUi { this.setVisible }
 }

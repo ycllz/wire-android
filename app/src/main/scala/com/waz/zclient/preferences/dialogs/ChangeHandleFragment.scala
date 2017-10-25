@@ -159,7 +159,7 @@ class ChangeHandleFragment extends DialogFragment with FragmentHelper {
   private def disableEditing() = {
     editingEnabled = false
     handleEditText.setEnabled(false)
-    handleVerifyingIndicator.show(LoadingIndicatorView.SPINNER)
+    handleVerifyingIndicator.show(LoadingIndicatorView.Spinner)
     okButton.setEnabled(false)
     backButton.setEnabled(false)
   }

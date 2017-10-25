@@ -129,7 +129,7 @@ public class ParticipantHeaderFragment extends BaseFragment<ParticipantHeaderFra
         headerEditText = ViewUtils.getView(rootView, R.id.taet__participants__header__editable);
         bottomBorder = ViewUtils.getView(rootView, R.id.v_participants__header__bottom_border);
         shieldView = ViewUtils.getView(rootView, R.id.sv__otr__verified_shield);
-        shieldView.setVisibility(View.GONE);
+
         penIcon = ViewUtils.getView(rootView, R.id.gtv__participants_header__pen_icon);
         penIcon.setVisibility(View.GONE);
 

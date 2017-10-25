@@ -17,7 +17,6 @@
  */
 package com.waz.zclient;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +26,7 @@ import com.waz.api.Self;
 import com.waz.api.UpdateListener;
 import com.waz.zclient.pages.BaseDialogFragment;
 import com.waz.zclient.ui.views.ZetaButton;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.ViewUtils;
 
 public class OtrDeviceLimitFragment extends BaseDialogFragment<OtrDeviceLimitFragment.Container> implements
@@ -69,15 +69,8 @@ public class OtrDeviceLimitFragment extends BaseDialogFragment<OtrDeviceLimitFra
         manageDevicesButton.setIsFilled(true);
         manageDevicesButton.setOnClickListener(this);
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            logoutButton.setAccentColor(getResources().getColor(R.color.text__primary_dark));
-            //noinspection deprecation
-            manageDevicesButton.setAccentColor(getResources().getColor(R.color.text__primary_dark));
-        } else {
-            logoutButton.setAccentColor(getResources().getColor(R.color.text__primary_dark, getContext().getTheme()));
-            manageDevicesButton.setAccentColor(getResources().getColor(R.color.text__primary_dark, getContext().getTheme()));
-        }
+        logoutButton.setAccentColor(ContextUtils.getColorWithTheme(R.color.text__primary_dark, getContext()));
+        manageDevicesButton.setAccentColor(ContextUtils.getColorWithTheme(R.color.text__primary_dark, getContext()));
 
         return view;
     }

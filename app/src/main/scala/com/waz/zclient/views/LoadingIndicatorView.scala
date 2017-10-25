@@ -19,91 +19,81 @@ package com.waz.zclient.views
 
 import android.content.Context
 import android.graphics.Color
-import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.{Gravity, View, ViewGroup}
-import android.view.View.{VISIBLE, GONE}
+import android.view.{Gravity, ViewGroup}
 import android.widget.FrameLayout
 import com.waz.utils.returning
 import com.waz.zclient.{R, ViewHelper}
 import com.waz.zclient.utils.ViewUtils
+import ViewGroup.LayoutParams
+import com.waz.threading.CancellableFuture
+import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.utils.RichView
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class LoadingIndicatorView(context: Context, attrs: AttributeSet, defStyle: Int) extends FrameLayout(context, attrs, defStyle) with ViewHelper {
+
+  import com.waz.threading.Threading.Implicits.Ui
+
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null)
 
   import LoadingIndicatorView._
 
-  private val animations = Map(
-    INFINITE_LOADING_BAR -> new Runnable() {
-      override def run(): Unit = if (setToVisible) {
-        progressView.setVisibility(GONE)
-        infiniteLoadingBarView.setVisibility(VISIBLE)
-        progressLoadingBarView.setVisibility(GONE)
-        setBackgroundColor(Color.TRANSPARENT)
-        ViewUtils.fadeInView(LoadingIndicatorView.this)
-      }
-    },
-    SPINNER -> new Runnable() {
-      override def run(): Unit = if (setToVisible) {
-        progressView.setVisibility(VISIBLE)
-        infiniteLoadingBarView.setVisibility(GONE)
-        progressLoadingBarView.setVisibility(GONE)
-        setBackgroundColor(Color.TRANSPARENT)
-        ViewUtils.fadeInView(LoadingIndicatorView.this)
-      }
-    },
-    SPINNER_WITH_DIMMED_BACKGROUND -> new Runnable() {
-      override def run(): Unit = if (setToVisible) {
-        progressView.setVisibility(VISIBLE)
-        infiniteLoadingBarView.setVisibility(GONE)
-        progressLoadingBarView.setVisibility(GONE)
-        setBackgroundColor(backgroundColor)
-        ViewUtils.fadeInView(LoadingIndicatorView.this)
-      }
-    },
-    PROGRESS_LOADING_BAR -> new Runnable() {
-      override def run(): Unit = if (setToVisible) {
-        progressView.setVisibility(GONE)
-        infiniteLoadingBarView.setVisibility(GONE)
-        progressLoadingBarView.setVisibility(VISIBLE)
-        setBackgroundColor(Color.TRANSPARENT)
-        ViewUtils.fadeInView(LoadingIndicatorView.this)
-      }
-    }
+  private val animations: Map[AnimationType, () => Unit] = Map(
+    InfiniteLoadingBar -> (() => if (setToVisible) {
+      progressView.setVisible(false)
+      infiniteLoadingBarView.setVisible(true)
+      progressLoadingBarView.setVisible(false)
+      setBackgroundColor(Color.TRANSPARENT)
+      ViewUtils.fadeInView(LoadingIndicatorView.this)
+    }),
+    Spinner -> (() => if (setToVisible) {
+      progressView.setVisible(true)
+      infiniteLoadingBarView.setVisible(false)
+      progressLoadingBarView.setVisible(false)
+      setBackgroundColor(Color.TRANSPARENT)
+      ViewUtils.fadeInView(LoadingIndicatorView.this)
+    }),
+    SpinnerWithDimmedBackground -> (() => if (setToVisible) {
+      progressView.setVisible(true)
+      infiniteLoadingBarView.setVisible(false)
+      progressLoadingBarView.setVisible(false)
+      setBackgroundColor(backgroundColor)
+      ViewUtils.fadeInView(LoadingIndicatorView.this)
+    }),
+    ProgressLoadingBar -> (() => if (setToVisible) {
+      progressView.setVisible(false)
+      infiniteLoadingBarView.setVisible(false)
+      progressLoadingBarView.setVisible(true)
+      setBackgroundColor(Color.TRANSPARENT)
+      ViewUtils.fadeInView(LoadingIndicatorView.this)
+    })
   )
 
-  private val hideRunnable = new Runnable() {
-    override def run(): Unit = {
-      ViewUtils.fadeOutView(LoadingIndicatorView.this)
-    }
-  }
-
   private lazy val infiniteLoadingBarView = returning(new InfiniteLoadingBarView(context)) { view =>
-    view.setVisibility(View.GONE)
-    addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    view.setVisible(false)
+    addView(view, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
   }
 
   private lazy val progressLoadingBarView = returning(new ProgressLoadingBarView(context)) { view =>
-    view.setVisibility(View.GONE)
-    addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    view.setVisible(false)
+    addView(view, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
   }
 
   private lazy val progressView = returning(new ProgressView(context)) { view =>
     view.setTextColor(Color.WHITE)
-    view.setTextSize(TypedValue.COMPLEX_UNIT_PX, getContext.getResources.getDimensionPixelSize(R.dimen.loading_spinner__size))
-    view.setVisibility(View.GONE)
+    view.setTextSize(TypedValue.COMPLEX_UNIT_PX, getDimenPx(R.dimen.loading_spinner__size))
+    view.setVisible(false)
 
-    val params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+    val params = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
     params.gravity = Gravity.CENTER
     addView(view, params)
   }
 
-  private val handler = new Handler(Looper.getMainLooper)
   private var setToVisible = false
   private var backgroundColor = 0
 
@@ -116,14 +106,12 @@ class LoadingIndicatorView(context: Context, attrs: AttributeSet, defStyle: Int)
 
   def show(animationType: AnimationType, delayMs: Long): Unit = {
     setToVisible = true
-    handler.removeCallbacks(null)
-    handler.postDelayed(animations(animationType), delayMs)
+    CancellableFuture.delayed(delayMs.millis) { animations(animationType) }
   }
 
   def hide(): Unit = {
     setToVisible = false
-    handler.removeCallbacks(null)
-    handler.post(hideRunnable)
+    Future { ViewUtils.fadeOutView(LoadingIndicatorView.this) }
   }
 
   def setColor(color: Int): Unit = {
@@ -134,34 +122,27 @@ class LoadingIndicatorView(context: Context, attrs: AttributeSet, defStyle: Int)
   def setProgress(progress: Float): Unit = progressLoadingBarView.setProgress(progress)
 
   def applyLightTheme(): Unit = {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) { //noinspection deprecation
-      progressView.setTextColor(getResources.getColor(R.color.text__primary_light))
-      backgroundColor = getResources.getColor(R.color.text__primary_disabled_dark)
-    }
-    else {
-      progressView.setTextColor(getResources.getColor(R.color.text__primary_light, getContext.getTheme))
-      backgroundColor = getResources.getColor(R.color.text__primary_disabled_dark, getContext.getTheme)
-    }
+    progressView.setTextColor(getColorWithTheme(R.color.text__primary_light, getContext))
+    backgroundColor = getColorWithTheme(R.color.text__primary_disabled_dark, getContext)
   }
 
   def applyDarkTheme(): Unit = {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      progressView.setTextColor(getResources.getColor(R.color.text__primary_dark))
-      backgroundColor = getResources.getColor(R.color.text__primary_disabled_light)
-    }
-    else {
-      progressView.setTextColor(getResources.getColor(R.color.text__primary_dark, getContext.getTheme))
-      backgroundColor = getResources.getColor(R.color.text__primary_disabled_light, getContext.getTheme)
-    }
+    progressView.setTextColor(getColorWithTheme(R.color.text__primary_dark, getContext))
+    backgroundColor = getColorWithTheme(R.color.text__primary_disabled_light, getContext)
   }
 
 }
 
-object LoadingIndicatorView extends Enumeration {
-  type AnimationType = Int
+object LoadingIndicatorView {
+  sealed trait AnimationType
+  case object InfiniteLoadingBar extends AnimationType
+  case object Spinner extends AnimationType
+  case object SpinnerWithDimmedBackground extends AnimationType
+  case object ProgressLoadingBar extends AnimationType
 
-  val INFINITE_LOADING_BAR = 0
-  val SPINNER = 1
-  val SPINNER_WITH_DIMMED_BACKGROUND = 2
-  val PROGRESS_LOADING_BAR = 3
+  // for Java use
+  def INFINITE_LOADING_BAR(): AnimationType = InfiniteLoadingBar
+  def SPINNER(): AnimationType = Spinner
+  def SPINNER_WITH_DIMMED_BACKGROUND(): AnimationType = SpinnerWithDimmedBackground
+  // right now we don't use ProgressLoadingBar anywhere
 }

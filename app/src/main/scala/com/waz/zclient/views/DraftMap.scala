@@ -26,16 +26,20 @@ import com.waz.zclient.conversation.ConversationController
 import scala.concurrent.{ExecutionContext, Future}
 
 class DraftMap(implicit injector: Injector) extends Injectable {
-  private val map = mutable.HashMap[ConvId, String]()
+  private val drafts = Signal(Map.empty[ConvId, String])
   private lazy val conversationController = inject[ConversationController]
 
   def setCurrent(text: String)(implicit ec: ExecutionContext): Future[Unit] = conversationController.currentConvId.head.map { id => set(id, text) }
-  def set(id: ConvId, text: String): Unit = map.put(id, text)
+  def set(id: ConvId, text: String): Unit = drafts.mutate { _ + (id -> text) }
 
-  def get(id: ConvId): String = map.getOrElse(id, "")
+  def get(id: ConvId)(implicit ec: ExecutionContext): Future[String] = drafts.head.map { _.getOrElse(id, "") }
 
-  val currentDraft: Signal[String] = conversationController.currentConvId.map(id => map.getOrElse(id, "") )
+  val currentDraft: Signal[String] = for {
+    convId <- conversationController.currentConvId
+    d <- drafts
+  } yield d.getOrElse(convId, "")
+
   def withCurrentDraft(f: (String) => Unit)(implicit ec: ExecutionContext): Future[Unit] = currentDraft.head.map( f )
 
-  def tearDown(): Unit = map.clear()
+  def tearDown(): Unit = drafts ! Map.empty[ConvId, String]
 }

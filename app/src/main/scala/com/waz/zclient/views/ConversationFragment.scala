@@ -77,6 +77,7 @@ import com.waz.zclient.ui.utils.KeyboardUtils
 import com.waz.zclient.utils.{LayoutSpec, PermissionUtils, SquareOrientation, ViewUtils}
 import com.waz.zclient.views.e2ee.ShieldView
 import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.utils.RichView
 
 import scala.concurrent.duration._
 import scala.collection.mutable
@@ -176,7 +177,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     listView = findById(R.id.messages_list_view)
 
     returningF( findById(R.id.sv__conversation_toolbar__verified_shield) ){ view: ShieldView =>
-      view.setVisibility(View.GONE)
+      view.setVisible(false)
     }
 
     // Recording audio messages
@@ -372,9 +373,11 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     fromId.filter(_ != toConv.id).foreach { id =>
       getControllerFactory.getConversationScreenController.setConversationStreamUiReady(false)
 
-      cursorView.setVisibility(if (toConv.isActive) View.VISIBLE else View.GONE)
-      cursorView.setText(draftMap.get(toConv.id))
-      cursorView.setConversation()
+      cursorView.setVisible(toConv.isActive)
+      draftMap.get(toConv.id).map { draftText =>
+        cursorView.setText(draftText)
+        cursorView.setConversation()
+      }
       hideAudioMessageRecording()
     }
 
@@ -812,13 +815,11 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
 
           val unverifiedNames = unverifiedUsers.map { u => if (self.map(_.id).contains(u.id)) getString(R.string.conversation_degraded_confirmation__header__you) else u.displayName }
 
-          val header = if (unverifiedUsers.isEmpty) {
-            getResources.getString(R.string.conversation__degraded_confirmation__header__someone)
-          } else if (unverifiedUsers.size == 1) {
-            getResources.getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, unverifiedDevices, unverifiedNames.head)
-          } else {
-            getString(R.string.conversation__degraded_confirmation__header__multiple_user, unverifiedNames.mkString(","))
-          }
+          val header =
+            if (unverifiedUsers.isEmpty) getResources.getString(R.string.conversation__degraded_confirmation__header__someone)
+            else if (unverifiedUsers.size == 1)
+              getResources.getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, unverifiedDevices, unverifiedNames.head)
+            else getString(R.string.conversation__degraded_confirmation__header__multiple_user, unverifiedNames.mkString(","))
 
           val onlySelfChanged = unverifiedUsers.size == 1 && self.map(_.id).contains(unverifiedUsers.head.id)
 
@@ -868,8 +869,6 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     override def onPanelOpened(panel: View): Unit = KeyboardUtils.closeKeyboardIfShown(getActivity)
     override def onPanelClosed(panel: View): Unit = {}
   }
-
-  private def splitPortraitMode = LayoutSpec.isTablet(getActivity) && isInPortrait(getActivity) && getControllerFactory.getNavigationController.getPagerPosition == 0
 
   private def hideAudioMessageRecording(): Unit = if (audioMessageRecordingView.getVisibility == View.VISIBLE) {
     audioMessageRecordingView.reset()

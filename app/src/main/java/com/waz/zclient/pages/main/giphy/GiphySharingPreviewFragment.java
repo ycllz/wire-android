@@ -17,7 +17,6 @@
  */
 package com.waz.zclient.pages.main.giphy;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -51,6 +50,7 @@ import com.waz.zclient.ui.theme.ThemeUtils;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.TextViewUtils;
 import com.waz.zclient.utils.Callback;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.LoadingIndicatorView;
 import com.waz.zclient.views.images.ImageAssetView;
@@ -248,12 +248,7 @@ public class GiphySharingPreviewFragment extends BaseFragment<GiphySharingPrevie
         confirmationMenu.setAccentColor(color);
         if (!((BaseActivity) getActivity()).injectJava(ThemeController.class).isDarkTheme()) {
             confirmationMenu.setCancelColor(color, color);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                //noinspection deprecation
-                confirmationMenu.setConfirmColor(getResources().getColor(R.color.white), color);
-            } else {
-                confirmationMenu.setConfirmColor(getResources().getColor(R.color.white, getContext().getTheme()), color);
-            }
+            confirmationMenu.setConfirmColor(ContextUtils.getColorWithTheme(R.color.white, getContext()), color);
         }
         loadingIndicator.setColor(color);
     }

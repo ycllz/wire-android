@@ -526,7 +526,6 @@ public class ParticipantBodyFragment extends BaseFragment<ParticipantBodyFragmen
         footerMenu.setVisibility(View.VISIBLE);
         topBorder.setVisibility(View.INVISIBLE);
 
-        //final IConversation conversation = getStoreFactory().conversationStore().getCurrentConversation();
         inject(ConversationController.class).withCurrentConv(new Callback<ConversationData>() {
             @Override
             public void callback(final ConversationData conv) {

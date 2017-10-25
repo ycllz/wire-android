@@ -22,7 +22,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -78,6 +77,7 @@ import com.waz.zclient.ui.optionsmenu.OptionsMenu;
 import com.waz.zclient.ui.optionsmenu.OptionsMenuItem;
 import com.waz.zclient.ui.theme.OptionsTheme;
 import com.waz.zclient.utils.Callback;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.DefaultPageTransitionAnimation;
@@ -196,13 +196,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
 
         bodyContainer = ViewUtils.getView(view, R.id.fl__participant__container);
         loadingIndicatorView = ViewUtils.getView(view, R.id.liv__participants__loading_indicator);
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
-        } else {
-            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color, getContext().getTheme()));
-        }
+        loadingIndicatorView.setColor(ContextUtils.getColorWithTheme(R.color.people_picker__loading__color, getContext()));
 
         participantsContainerView = ViewUtils.getView(view, R.id.ll__participant__container);
         pickUserContainerView = ViewUtils.getView(view, R.id.fl__add_to_conversation__pickuser__container);

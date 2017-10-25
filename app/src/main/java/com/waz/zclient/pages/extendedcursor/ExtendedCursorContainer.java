@@ -21,7 +21,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -37,6 +36,7 @@ import com.waz.zclient.pages.extendedcursor.image.CursorImagesLayout;
 import com.waz.zclient.pages.extendedcursor.voicefilter.VoiceFilterLayout;
 import com.waz.zclient.ui.animation.interpolators.penner.Expo;
 import com.waz.zclient.ui.utils.KeyboardUtils;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.ViewUtils;
 
 import java.util.List;
@@ -83,12 +83,7 @@ public class ExtendedCursorContainer extends FrameLayout implements KeyboardHeig
     public ExtendedCursorContainer(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         sharedPreferences = getContext().getSharedPreferences(PREF__NAME, Context.MODE_PRIVATE);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            accentColor = getResources().getColor(R.color.accent_blue);
-        } else {
-            accentColor = getResources().getColor(R.color.accent_blue, context.getTheme());
-        }
+        accentColor = ContextUtils.getColorWithTheme(R.color.accent_blue, context);
         isExpanded = false;
         type = Type.NONE;
         initKeyboardHeight();

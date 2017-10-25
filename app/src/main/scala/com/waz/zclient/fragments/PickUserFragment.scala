@@ -706,7 +706,7 @@ class PickUserFragment extends BaseFragment[PickUserFragment.Container]
           val conversation: IConversation = user.getConversation
           if (conversation != null) {
             KeyboardUtils.hideKeyboard(getActivity)
-            conversationController.selectConv(Some(new ConvId(conversation.getId)), ConversationChangeRequester.START_CONVERSATION)
+            conversationController.selectConv(new ConvId(conversation.getId), ConversationChangeRequester.START_CONVERSATION)
           }
         }
       case ConnectionStatus.PendingFromUser |

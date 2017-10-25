@@ -82,7 +82,7 @@ class ConnectivityFragment extends Fragment with FragmentHelper with Connectivit
       case (NetworkMode.OFFLINE | NetworkMode.UNKNOWN, _,  _) =>
         loadingIndicatorView.hide()
       case (_, true, _) | (_, _, true) =>
-        loadingIndicatorView.show(LoadingIndicatorView.INFINITE_LOADING_BAR)
+        loadingIndicatorView.show(LoadingIndicatorView.InfiniteLoadingBar)
       case _ =>
         loadingIndicatorView.hide()
     }

@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -268,12 +267,7 @@ public class SignUpPhotoFragment extends BaseFragment<SignUpPhotoFragment.Contai
     public void onAccentColorHasChanged(Object sender, int color) {
         chooseOwnButton.setAccentColor(color);
         keepButton.setAccentColor(color);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            keepButton.setTextColor(getResources().getColor(R.color.text__primary_dark));
-        } else {
-            keepButton.setTextColor(getResources().getColor(R.color.text__primary_dark, getContext().getTheme()));
-        }
+        keepButton.setTextColor(ContextUtils.getColorWithTheme(R.color.text__primary_dark, getContext()));
     }
 
     @Override

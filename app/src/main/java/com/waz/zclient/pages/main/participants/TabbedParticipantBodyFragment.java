@@ -17,7 +17,6 @@
  */
 package com.waz.zclient.pages.main.participants;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -52,6 +51,7 @@ import com.waz.zclient.utils.Callback;
 import com.waz.zclient.pages.main.participants.views.ParticipantOtrDeviceAdapter;
 import com.waz.zclient.pages.main.participants.views.TabbedParticipantPagerAdapter;
 import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
+import com.waz.zclient.utils.ContextUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.ParticipantDetailsTab;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -136,19 +136,9 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
         TabIndicatorLayout tabIndicatorLayout = ViewUtils.getView(view, R.id.til_single_participant_tabs);
         int color;
         if (((BaseActivity) getActivity()).injectJava(ThemeController.class).isDarkTheme()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                //noinspection deprecation
-                color = getResources().getColor(R.color.text__secondary_dark);
-            } else {
-                color = getResources().getColor(R.color.text__secondary_dark, getContext().getTheme());
-            }
+            color = ContextUtils.getColorWithTheme(R.color.text__secondary_dark, getContext());
         } else {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                //noinspection deprecation
-                color = getResources().getColor(R.color.text__secondary_light);
-            } else {
-                color = getResources().getColor(R.color.text__secondary_light, getContext().getTheme());
-            }
+            color = ContextUtils.getColorWithTheme(R.color.text__secondary_light, getContext());
         }
         if (tabIndicatorLayout != null) {
             tabIndicatorLayout.setPrimaryColor(color);
