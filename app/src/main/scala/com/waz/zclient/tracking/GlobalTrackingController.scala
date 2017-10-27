@@ -91,6 +91,11 @@ class GlobalTrackingController(implicit inj: Injector, cxt: WireContext, eventCo
     case _ => //already registered to this zms, do nothing.
   }
 
+  TrackingHelper.EventsStream.on(dispatcher) {
+    case com.waz.LoggedOutEvent(cause) => trackEvent(LogOutEvent(cause))
+    case _ =>
+  }
+
   /**
     * Register tracking event listeners on SE services in this method. We need a method here, since whenever the signal
     * zms fires, we want to discard the previous reference to the subscriber. Not doing so will cause this class to keep

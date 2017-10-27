@@ -26,6 +26,7 @@ import android.support.v4.app.{Fragment, FragmentTransaction}
 import android.util.AttributeSet
 import android.view.View
 import android.widget.LinearLayout
+import com.waz.{TrackingHelper, LoggedOutEvent}
 import com.waz.api.impl.AccentColor
 import com.waz.model.EmailAddress
 import com.waz.service.ZMessaging
@@ -259,6 +260,7 @@ class AccountViewController(view: AccountView)(implicit inj: Injector, ec: Event
       new DialogInterface.OnClickListener() {
         def onClick(dialog: DialogInterface, which: Int) = {
           context.asInstanceOf[PreferencesActivity].getControllerFactory.getUsernameController.tearDown()
+          TrackingHelper.EventsStream ! LoggedOutEvent("user request")
           zms.map(_.account).head.flatMap(_.logout(true))(Threading.Ui)
           navigator.back()
           navigator.back()

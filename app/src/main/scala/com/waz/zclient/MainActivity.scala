@@ -26,6 +26,7 @@ import android.net.Uri
 import android.os.{Build, Bundle}
 import android.support.v4.app.Fragment
 import android.text.TextUtils
+import com.waz.{TrackingHelper, LoggedOutEvent}
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog.{error, info, verbose}
 import com.waz.api.{NetworkMode, _}
@@ -281,6 +282,7 @@ class MainActivity extends BaseActivity
   }
 
   private def onPasswordWasReset() = {
+    TrackingHelper.EventsStream ! LoggedOutEvent("password was reset")
     getStoreFactory.zMessagingApiStore.getApi.logout()
     openSignUpPage()
   }
