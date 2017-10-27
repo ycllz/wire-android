@@ -150,7 +150,7 @@ class MainActivity extends BaseActivity
       active <- ZMessaging.currentAccounts.activeAccount.head
       loggedIn <- ZMessaging.currentAccounts.loggedInAccounts.head
       _ <- active match {
-        case Some(account) if !loggedIn.map(_.id).contains(account.id) =>
+        case Some(account) if !loggedIn.map(_.id).contains(account.id) || !account.cookie.exists(_.isValid)=>
           ZMessaging.currentAccounts.logout(flushCredentials = true)
         case _ =>
           Future.successful(())
