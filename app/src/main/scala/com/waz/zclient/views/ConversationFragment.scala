@@ -311,7 +311,7 @@ class ConversationFragment extends BaseFragment[ConversationFragment.Container] 
     getControllerFactory.getSlidingPaneController.addObserver(slidingPaneObserver)
   }
 
-  private def updateTitle(text: String) = if (toolbarTitle != null) toolbarTitle.setText(text)
+  private def updateTitle(text: String): Unit = if (toolbarTitle != null) toolbarTitle.setText(text)
 
   override def onResume(): Unit = {
     super.onResume()

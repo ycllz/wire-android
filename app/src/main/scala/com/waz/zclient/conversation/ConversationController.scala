@@ -50,8 +50,6 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
   private val zms = inject[Signal[ZMessaging]]
   private val userAccounts = inject[UserAccountsController]
   private lazy val convStore = inject[IStoreFactory].conversationStore
-  private val storage = zms.map(_.convsStorage)
-  private val stats = zms.map(_.convsStats)
 
   private var lastConvId = Option.empty[ConvId]
 
@@ -61,7 +59,10 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   val convChanged: SourceStream[ConversationChange] = EventStream[ConversationChange]()
 
-  def conversationData(convId: ConvId): Signal[Option[ConversationData]] = storage.flatMap(_.optSignal(convId))
+  def conversationData(convId: ConvId): Signal[Option[ConversationData]] = for {
+    storage <- zms.map(_.convsStorage)
+    conv <- storage.optSignal(convId)
+  } yield conv
 
   val currentConvType: Signal[ConversationType] = currentConv.map(_.convType)
   val currentConvName: Signal[String] = currentConv.map { _.displayName } // the name of the current conversation can be edited (without switching)
@@ -70,10 +71,11 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   currentConvId { convId => zms(_.conversations.forceNameUpdate(convId)) }
 
-    // this should be the only UI entry point to change conv in SE
+  // this should be the only UI entry point to change conv in SE
   def selectConv(convId: Option[ConvId], requester: ConversationChangeRequester): Future[Unit] = convId match {
     case None => Future.successful({})
     case Some(_) =>
+      val stats = zms.map(_.convsStats)
       stats.head.flatMap(_.selectConversation(convId)).map { _ =>
         convChanged ! ConversationChange(from = lastConvId, to = convId, requester = requester)
         lastConvId = convId
@@ -82,7 +84,8 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
 
   def selectConv(id: ConvId, requester: ConversationChangeRequester): Future[Unit] = selectConv(Some(id), requester)
 
-  def loadConv(convId: ConvId): Future[Option[ConversationData]] = storage.head.flatMap(_.get(convId))
+  def loadConv(convId: ConvId): Future[Option[ConversationData]] =
+    zms.map(_.convsStorage).head.flatMap(_.get(convId))
 
   def getOrCreateConv(userId: UserId): Future[ConversationData] = for {
     z <- zms.head

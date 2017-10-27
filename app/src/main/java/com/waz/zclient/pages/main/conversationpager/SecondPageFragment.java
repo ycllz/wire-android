@@ -129,14 +129,15 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        inject(ConversationController.class).onConvChanged(new Callback<ConversationController.ConversationChange>() {
+        final ConversationController convController = inject(ConversationController.class);
+        convController.onConvChanged(new Callback<ConversationController.ConversationChange>() {
             @Override
             public void callback(final ConversationController.ConversationChange change) {
                 if (change.toConvId() == null || change.noChange()) {
                     return;
                 }
 
-                inject(ConversationController.class).withCurrentConvType(new Callback<IConversation.Type>() {
+                convController.withCurrentConvType(new Callback<IConversation.Type>() {
                     @Override
                     public void callback(final IConversation.Type convType) {
                         selectedConversationType = convType;

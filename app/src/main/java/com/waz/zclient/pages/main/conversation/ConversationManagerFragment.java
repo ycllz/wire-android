@@ -113,6 +113,43 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
         }
 
         loadingIndicatorView = ViewUtils.getView(view, R.id.liv__conversation_manager__loading_indicator);
+
+        final ConversationController convController = inject(ConversationController.class);
+        final CollectionController colController = inject(CollectionController.class);
+        convController.onConvChanged(new Callback<ConversationController.ConversationChange>() {
+            @Override
+            public void callback(ConversationController.ConversationChange change) {
+                if (change.noChange()) {
+                    return;
+                }
+
+                if (change.requester() == ConversationChangeRequester.START_CONVERSATION ||
+                    change.requester() == ConversationChangeRequester.INCOMING_CALL ||
+                    change.requester() == ConversationChangeRequester.LEAVE_CONVERSATION ||
+                    change.requester() == ConversationChangeRequester.DELETE_CONVERSATION ||
+                    change.requester() == ConversationChangeRequester.BLOCK_USER) {
+                    if (getControllerFactory().getNavigationController().getCurrentRightPage() == Page.CAMERA &&
+                        !change.noChange()) {
+                        getControllerFactory().getCameraController().closeCamera(CameraContext.MESSAGE);
+                    }
+
+                    getControllerFactory().getConversationScreenController().hideParticipants(false, (change.requester() == ConversationChangeRequester.START_CONVERSATION));
+
+                    closeLikesList();
+                }
+
+                if (change.toConvId() != null) {
+                    IConversation iConv = convController.iConv(change.toConvId());
+                    getStoreFactory().participantsStore().setCurrentConversation(iConv);
+                    conversationModelObserver.setAndUpdate(iConv);
+                }
+
+                if (colController != null) {
+                    colController.closeCollection();
+                }
+            }
+        });
+
         return view;
     }
 
@@ -125,42 +162,18 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
         getControllerFactory().getPickUserController().addPickUserScreenControllerObserver(this);
 
         getControllerFactory().getLocationController().addObserver(this);
-        inject(CollectionController.class).addObserver(this);
+
+        final CollectionController colController = inject(CollectionController.class);
+        if (colController != null) {
+            colController.addObserver(this);
+        }
 
         final ConversationController ctrl = inject(ConversationController.class);
 
-        IConversation currentConversation = ctrl.iCurrentConv();
-        if (currentConversation != null) {
-            getStoreFactory().participantsStore().setCurrentConversation(currentConversation);
+        IConversation curConv = ctrl.iCurrentConv();
+        if (curConv != null) {
+            getStoreFactory().participantsStore().setCurrentConversation(curConv);
         }
-
-        ctrl.onConvChanged(new Callback<ConversationController.ConversationChange>() {
-            @Override
-            public void callback(ConversationController.ConversationChange change) {
-            if (change.requester() == ConversationChangeRequester.START_CONVERSATION ||
-                change.requester() == ConversationChangeRequester.INCOMING_CALL ||
-                change.requester() == ConversationChangeRequester.LEAVE_CONVERSATION ||
-                change.requester() == ConversationChangeRequester.DELETE_CONVERSATION ||
-                change.requester() == ConversationChangeRequester.BLOCK_USER) {
-                if (getControllerFactory().getNavigationController().getCurrentRightPage() == Page.CAMERA &&
-                    !change.noChange()) {
-                    getControllerFactory().getCameraController().closeCamera(CameraContext.MESSAGE);
-                }
-
-                getControllerFactory().getConversationScreenController().hideParticipants(false, (change.requester() == ConversationChangeRequester.START_CONVERSATION));
-
-                closeLikesList();
-            }
-
-            if (change.toConvId() != null) {
-                IConversation iConv = ctrl.iConv(change.toConvId());
-                getStoreFactory().participantsStore().setCurrentConversation(iConv);
-                conversationModelObserver.setAndUpdate(iConv);
-            }
-
-                inject(CollectionController.class).closeCollection();
-            }
-        });
     }
 
     @Override

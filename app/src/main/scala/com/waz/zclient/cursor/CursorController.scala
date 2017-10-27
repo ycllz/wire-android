@@ -117,8 +117,8 @@ class CursorController(implicit inj: Injector, ctx: Context, evc: EventContext) 
   // notify SE about typing state
   enteredText { text =>
     for {
-      convId <- conversationController.currentConvId
       typing <- zms.map(_.typing)
+      convId <- conversationController.currentConvId
     } {
       if (text.isEmpty) typing.selfClearedInput(convId)
       else typing.selfChangedInput(convId)
